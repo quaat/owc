@@ -1,0 +1,39 @@
+name: M3 baseline integration
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e ".[dev]"
+      - name: Unit tests and lint
+        run: |
+          ruff check .
+          pytest -q tests/test_baselines.py
+      - name: Stockfish engine
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq stockfish
+      - name: Train and compare smoke
+        run: |
+          ROOT="$(mktemp -d)"
+          python -m owc dataset build --synthetic-games 40 --seed 42 --min-ply 4 --stride 2 --max-plies 8 --dev-dir "$ROOT/dev" --heldout-dir "$ROOT/heldout"
+          STOCKFISH_PATH=/usr/games/stockfish python -m owc oracle batch --input "$ROOT/dev/train.fen" --output "$ROOT/dev/train.labels.jsonl" --nodes 64
+          STOCKFISH_PATH=/usr/games/stockfish python -m owc oracle batch --input "$ROOT/dev/dev.fen" --output "$ROOT/dev/dev.labels.jsonl" --nodes 64
+          python -m owc.baselines train --train-labels "$ROOT/dev/train.labels.jsonl" --dev-labels "$ROOT/dev/dev.labels.jsonl" --output-dir "$ROOT/model" --seed 11 --epochs 1
+          python -m owc.baselines compare --dev-labels "$ROOT/dev/dev.labels.jsonl" --supervised-checkpoint "$ROOT/model"
