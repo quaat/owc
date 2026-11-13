@@ -40,6 +40,7 @@ class FakeEngine:
 def fake_stockfish(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[Path, FakeEngine]:
     binary = tmp_path / "stockfish-mock"
     binary.write_text("test engine")
+    binary.chmod(0o755)  # shutil.which only resolves executable files
     mock = FakeEngine()
     monkeypatch.setattr(chess.engine.SimpleEngine, "popen_uci", lambda *a, **kw: mock)
     return binary, mock
