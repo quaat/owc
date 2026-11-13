@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  m0:
+  m1:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -25,5 +25,12 @@ jobs:
         run: ruff check .
       - name: Test
         run: pytest -q
+      - name: Install Stockfish reference engine
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq stockfish
+      - name: Stockfish oracle smoke
+        run: |
+          STOCKFISH_PATH=/usr/games/stockfish python -m owc oracle score --fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" --nodes 256 --json
       - name: CLI smoke
         run: python -m owc inspect --json

@@ -41,6 +41,29 @@ network parameter count, and the static evaluation. Positive scores will mean
 
 Invalid or impossible FEN positions are rejected rather than silently normalized.
 
+## M1: Stockfish position oracle
+
+Install Stockfish separately (e.g. from your system package manager). The
+`STOCKFISH_PATH` variable identifies the engine; `stockfish` from PATH
+is the fallback.
+
+```bash
+export STOCKFISH_PATH=/usr/games/stockfish
+owc oracle score --fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" --nodes 10000 --json
+printf '%s\n' "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" > /tmp/start.fen
+owc oracle batch --input /tmp/start.fen --output /tmp/start.jsonl --nodes 10000
+```
+
+The `oracle batch` command produces new, non-overwritten JSONL and companion
+`.manifest.json` files; a failed batch does not publish partial output.
+Scores are from the **side-to-move** perspective and include raw centipawns
+(or mate distance), engine ID, engine binary SHA-256, requested node budget,
+PV and actual nodes when available. `cp_tanh` uses
+`tanh(cp / 400)` by default, and `wdl_expectation` requires engine WDL
+data. Terminal positions are rejected because chess rules determine their result.
+An identical node budget is not a bitwise reproducibility guarantee across
+Stockfish versions or hardware.
+
 ## Developer checks
 
 ```bash
@@ -71,7 +94,7 @@ exact input semantics must be versioned when changed.
 
 - `python-chess` supplies legal move generation, position validation, and
   outcome detection; the neural network only computes a **static score**.
-- No Stockfish evaluator, position dataset, agent patcher, supervised training,
-  independent search or UCI server is implemented in M0.
+- The M1 Stockfish oracle is available; datasets, agent patcher, supervised training,
+  independent search and UCI server remain future milestones.
 - Stockfish-derived labels and benchmark results must keep strict test-set
   isolation and explicit engine/version/settings provenance.
