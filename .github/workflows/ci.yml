@@ -51,5 +51,11 @@ jobs:
           python -m owc weights inspect --session "$ROOT/session" --tensor layers.4.bias
           python -m owc weights probe --session "$ROOT/session" --fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
           python -m owc weights rollback --session "$ROOT/session" --name baseline
+      - name: M3 fixture experiment and Stockfish feedback pipeline
+        run: |
+          ROOT="$(mktemp -d)"
+          python -m owc dataset build --synthetic-games 50 --seed 42 --min-ply 4 --stride 2 --max-plies 10 --dev-dir "$ROOT/dev" --heldout-dir "$ROOT/heldout"
+          STOCKFISH_PATH=/usr/games/stockfish python -m owc oracle batch --input "$ROOT/dev/dev.fen" --output "$ROOT/dev/dev.labels.jsonl" --nodes 64
+          python -m owc experiment run --dev-labels "$ROOT/dev/dev.labels.jsonl" --output-dir "$ROOT/experiment" --feedback-rounds 0
       - name: CLI smoke
         run: python -m owc inspect --json

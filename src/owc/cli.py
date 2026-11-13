@@ -9,6 +9,7 @@ import torch
 
 from owc.board.encoding import ENCODING_VERSION, encode_board, parse_legal_fen
 from owc.dataset.cli import add_dataset_parser, run_dataset
+from owc.experiments.cli import add_experiment_parser, run_experiment_cli
 from owc.models.raw_mlp import RawMLP
 from owc.oracle.cli import add_oracle_parser, run_oracle
 from owc.weightspace.cli import add_weights_parser, run_weights
@@ -27,12 +28,20 @@ def build_parser() -> argparse.ArgumentParser:
     add_oracle_parser(commands)
     add_dataset_parser(commands)
     add_weights_parser(commands)
+    add_experiment_parser(commands)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    if args.command == "experiment":
+        try:
+            run_experiment_cli(args)
+        except (ValueError, FileNotFoundError, FileExistsError, RuntimeError) as error:
+            parser.error(str(error))
+        return 0
 
     if args.command == "weights":
         try:
