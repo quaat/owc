@@ -90,7 +90,7 @@ class CommandAgent:
     the underlying model or implementation.
     """
 
-    def __init__(self, command: str, identity: str) -> None:
+    def __init__(self, command: str, identity: str, env: dict[str, str] | None = None) -> None:
         self.command = shlex.split(command)
         if not self.command:
             raise ValueError("agent command must not be empty")
@@ -98,6 +98,7 @@ class CommandAgent:
             raise ValueError("Actual agent identity must be declared")
 
         self.identity = identity
+        self.env = dict(env) if env is not None else None
 
     def propose(self, request: dict, timeout_seconds: float) -> dict:
         wire = canonical_bytes(request)
@@ -109,6 +110,7 @@ class CommandAgent:
             capture_output=True,
             text=True,
             timeout=timeout_seconds,
+            env=self.env,
             check=False,
         )
         if completed.returncode:

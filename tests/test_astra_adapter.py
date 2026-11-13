@@ -36,6 +36,7 @@ def test_foundry_adapter_emits_only_patch_and_saves_usage(monkeypatch, tmp_path,
             return json.dumps(provider_response).encode()
 
     def fake_open(http_request, timeout):
+        assert len(list(tmp_path.glob("*.preflight.restricted.json"))) >= 1
         payload = json.loads(http_request.data)
         assert payload["model"] == "gpt-6-astra"
         assert payload["text"]["format"]["type"] == "json_object"
@@ -52,8 +53,10 @@ def test_foundry_adapter_emits_only_patch_and_saves_usage(monkeypatch, tmp_path,
     captured = capsys.readouterr()
     assert json.loads(captured.out) == patch
     assert captured.err == ""
-    restricted_path = next(tmp_path.glob("*.restricted.json"))
+    restricted_path = next(path for path in tmp_path.glob("*.restricted.json")
+                           if ".preflight." not in path.name)
     public_path = next(tmp_path.glob("*.public.json"))
+    preflight_path = next(tmp_path.glob("*.preflight.restricted.json"))
     saved = json.loads(restricted_path.read_text())
     public = json.loads(public_path.read_text())
     assert saved["response_id"] == public["response_id"] == "resp_fixture"
@@ -72,6 +75,8 @@ def test_foundry_adapter_emits_only_patch_and_saves_usage(monkeypatch, tmp_path,
     assert public["restricted_transcript_sha256"] == hashlib.sha256(
         restricted_path.read_bytes()
     ).hexdigest()
+    assert public["preflight_sha256"] == hashlib.sha256(preflight_path.read_bytes()).hexdigest()
+    assert stat.S_IMODE(preflight_path.stat().st_mode) == 0o600
     assert stat.S_IMODE(restricted_path.stat().st_mode) == 0o600
     assert stat.S_IMODE(public_path.stat().st_mode) == 0o600
     assert "fixture-secret" not in json.dumps(saved)

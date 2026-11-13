@@ -27,7 +27,8 @@ operator-chosen external command and requires OS isolation from held-out data.
 
 Before a provider request, the adapter requires a diagnostic directory owned
 by its OS user with no group or world access. It hashes the exact agent
-request, provider wire request, instructions and adapter source. It stores
+request, provider wire request, instructions and adapter source, and persists
+a 0600 preflight record of the request bytes and hashes before network I/O. It stores
 exact provider request/response bytes, IDs, usage, the requested deployment,
 reported model, and failure detail in a 0600 restricted transcript. A paired
 0600 `.public.json` file contains hashes, bounded identifiers, token counts,

@@ -16,7 +16,8 @@ creates transcript and attestation files with mode 0600, refusing a
 group/world-accessible directory. The transcript includes the exact provider
 request and response bytes in base64, development positions, the internal
 endpoint, hashes, IDs and usage; keep it under restricted access and never
-commit it. The paired `.public.json` attestation omits positions and endpoint
+commit it. A separate 0600 preflight record is written before the provider
+call. The paired `.public.json` attestation omits positions and endpoint
 but must still be reviewed before publication. A failed diagnostic write
 causes the adapter to exit without emitting a patch, including after a
 provider response.
@@ -56,7 +57,9 @@ line, Git, a manifest, or diagnostics.
 ## Small development run
 
 Use a licensed and attributed PGN for research claims. The following random
-games are **integration smoke data only**:
+games are **integration smoke data only**. The direct experiment command below
+documents the original integration attempt; use the isolated E0 launcher later
+in this document for any new real provider call:
 
 ```bash
 owc dataset build --synthetic-games 30 --seed 42 --min-ply 8 \
@@ -98,3 +101,40 @@ Stockfish build, options and node budget for both train and dev splits.
 Do not run E20/E50 until the E0/E5 adapter, patch behavior and costs are
 reviewed, and their projected call/token budgets are confirmed. Independent
 test claims require frozen checkpoints and an isolated evaluator process.
+
+## One-call isolated E0 preparation
+
+On the Linux host, install `bubblewrap` and set `OWC_ASTRA_ENDPOINT` and
+`AZURE_OPENAI_API_KEY` in the environment without putting either value in a
+command line or tracked file. The following probe uses authenticated
+`GET /models` and does **not** request inference:
+
+```bash
+.venv/bin/python scripts/research/run_e0_isolated.py \
+  --dev-labels datasets/astra-smoke-30/dev.labels.jsonl \
+  --output-dir runs/astra-e0-real-seed11 \
+  --diagnostics-dir runs/astra-e0-real-seed11-diagnostics \
+  --heldout-deny-path /tmp/owc-astra-smoke-heldout-30/test.fen \
+  --max-output-tokens 3000 --provider-timeout 90 --probe-only
+```
+
+The launcher refuses to proceed unless the existing held-out path is absent
+inside the namespace, home and datasets are hidden, the credential is present,
+and the requested deployment appears in an authenticated model listing. It
+records a private preparation manifest with code/prompt hashes and a one-call
+token ceiling. The path check does not read test contents. The adapter runs
+with read-only source, empty home/datasets/runs and `/tmp`, plus one private
+writable diagnostics mount. The editing process receives only a small
+allowlist of environment variables. The runner outside the namespace reads
+the development labels. The generated test split is still not an independent
+sealed benchmark and no held-out score is produced by E0.
+
+After reviewing a clean-commit preparation and the available price/cost
+ceiling, repeat the command with a **fresh** diagnostics directory and without
+`--probe-only` to make exactly one E0 inference call. The run has zero teacher
+disclosures, seed 11, four blind probes, a 150-second wall limit and at most
+3,000 output tokens. The provider's JSON-object behavior and actual model
+identity can only be established by the real response. A dollar ceiling is
+currently unavailable from the model-list endpoint; do not invent one.
+Do not start E5 until the E0 patch, actual usage/cost and output behavior
+have been independently reviewed.

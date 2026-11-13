@@ -170,12 +170,30 @@ def _diagnostic(directory: Path, data: dict) -> None:
         "provider_response_sha256": data.get("provider_response_sha256"),
         "instructions_sha256": data.get("instructions_sha256"),
         "adapter_source_sha256": data.get("adapter_source_sha256"),
+        "preflight_sha256": data.get("preflight_sha256"),
         "restricted_transcript_sha256": hashlib.sha256(raw).hexdigest(),
     }
     _write_private(
         directory / f"{stem}.public.json",
         (json.dumps(public, sort_keys=True, indent=2, allow_nan=False) + "\n").encode(),
     )
+
+
+def _persist_preflight(directory: Path, diagnostic: dict) -> str:
+    """Persist exact call inputs and hashes before any provider request."""
+    preflight = {
+        key: diagnostic[key] for key in (
+            "adapter_version", "endpoint", "deployment_requested", "actor",
+            "parameters", "agent_request_sha256", "instructions_sha256",
+            "adapter_source_sha256", "provider_request_sha256",
+            "provider_request_raw_b64",
+        )
+    }
+    preflight["status"] = "prepared_before_provider_call"
+    wire = (json.dumps(preflight, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
+    name = f"{time.time_ns()}-{uuid.uuid4().hex}.preflight.restricted.json"
+    _write_private(directory / name, wire)
+    return hashlib.sha256(wire).hexdigest()
 
 
 def main() -> int:
@@ -215,6 +233,7 @@ def main() -> int:
         wire = canonical_bytes(payload)
         diagnostic["provider_request_sha256"] = hashlib.sha256(wire).hexdigest()
         diagnostic["provider_request_raw_b64"] = base64.b64encode(wire).decode()
+        diagnostic["preflight_sha256"] = _persist_preflight(directory, diagnostic)
         http_request = urllib.request.Request(
             endpoint, data=wire, method="POST",
             headers={"Content-Type": "application/json",
