@@ -1,0 +1,26 @@
+{
+  "astra_e0_dev_mae": null,
+  "astra_e0_missing_reason": "No model-generated patch; DNS failed before provider response",
+  "astra_e5_dev_mae": null,
+  "astra_e5_missing_reason": "Not run",
+  "experiment_id": "owc-m3-20261113-smoke-pilot",
+  "handcrafted_dev_mae": 0.2583377147571239,
+  "independent_test_mae": null,
+  "independent_test_missing_reason": "No OS isolation or blind evaluator",
+  "model_connection_observation": {
+    "http_status": 200,
+    "input_tokens": 18,
+    "latency_seconds": 1.4584902620408684,
+    "original_raw_response_archived": false,
+    "output_tokens": 11,
+    "reported_model": "gpt-6-astra",
+    "response_id": "resp_02fd1c4045f5ea08006af77b5754688195aaad69b1d470884b",
+    "source": "prior session tool output and contemporaneous note",
+    "total_tokens": 29
+  },
+  "position_count": 28,
+  "schema_version": "owc.research-results.v1",
+  "scope": "synthetic development integration smoke only",
+  "supervised_dev_mae": 0.704238772392273,
+  "zero_model_dev_mae": 0.722732457937384
+}

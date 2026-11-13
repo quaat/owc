@@ -1,0 +1,113 @@
+{
+  "accepted_patches": 0,
+  "adapter_elapsed_seconds": 0.00776629289612174,
+  "adapter_source_hash_missing_reason": "Source changed after run; execution hash not recorded",
+  "adapter_source_sha256_at_execution": null,
+  "adapter_version": "owc.foundry-responses.v1",
+  "architecture": "781->32 ReLU->16 ReLU->1 tanh",
+  "changed_parameters": 0,
+  "completed_model_calls": 0,
+  "condition": "E0",
+  "cost_usd": null,
+  "current_prompt_sha256": "edfa6e932dd69494368447f3f1cfed4b188457a1e40cd5a1e2c6a629a4802e24",
+  "dataset_license": "generated-in-repository",
+  "dataset_manifest_sha256": "962352c3d586a5800f6a0ebbb303358fae6986d0f6e8cf57594ded0deeb91f78",
+  "dataset_source": "30 synthetic random legal games; integration smoke only",
+  "deployment_requested": "gpt-6-astra",
+  "dev_mae_final_derived": 0.722732457937384,
+  "dev_mae_initial_derived": 0.722732457937384,
+  "dev_mae_source": "recomputed from original dev labels and unchanged zero model",
+  "dev_source": {
+    "label_sha256": "0163e99d8436290e0edff3dbcdcfed7e54f35d6aa35de4d6a96c38c80b899b03",
+    "oracle": {
+      "binary": "/tmp/owc-stockfish/usr/games/stockfish",
+      "binary_sha256": "38faa5883b03652f847a87ed168b1bfee81b361db9584dae59a51cb91e69d9d6",
+      "cp_scale": 400.0,
+      "engine_id": {
+        "author": "the Stockfish developers (see AUTHORS file)",
+        "name": "Stockfish 17.1"
+      },
+      "nodes_requested": 1000,
+      "schema_version": "owc.stockfish.v1",
+      "target": "cp_tanh",
+      "transport": "direct-uci-smoke-v1",
+      "uci_options": {
+        "Hash": 16,
+        "Threads": 1,
+        "UCI_ShowWDL": false
+      },
+      "wdl_enabled": false
+    },
+    "records": 28,
+    "role": "dev",
+    "source_sha256": "f3bbd31834e2e131af44a0733f8316a13085f956e17904fc7384afcd8cc6ecab",
+    "target": "cp_tanh"
+  },
+  "elapsed_seconds": 1.106812443002127,
+  "encoding_version": "owc.raw781.v1",
+  "error_category": "sandbox_dns_resolution_failure",
+  "error_detail_public": "Temporary failure in name resolution",
+  "error_type": "URLError",
+  "evaluation_role": "development_only",
+  "experiment_id": "owc-m3-20261113-smoke-pilot-e0-attempt1",
+  "failed_invocations": 1,
+  "feedback_disclosures": 0,
+  "final_model_hash": "11eb14dd2b0d22f7a1d3587f2469d0983159c739f83df90fb9448bebfb279f3c",
+  "final_revision": "5fdedee893f44c5aa1e0c9bc5a27bec9",
+  "git_commit_at_run": "8417fbb939dc465aca269aef80dcd7cad5bc940e",
+  "heldout_isolated": false,
+  "initial_model_hash": "11eb14dd2b0d22f7a1d3587f2469d0983159c739f83df90fb9448bebfb279f3c",
+  "initial_revision": "5fdedee893f44c5aa1e0c9bc5a27bec9",
+  "input_tokens": null,
+  "model_invocation": {
+    "max_output_tokens": 6000,
+    "text_format": "json_object"
+  },
+  "original_diagnostic_sha256": "28d94160c07433db543a55a9e4f84c5d22a934383fb9da4e04d65e02ac4b424b",
+  "original_events_sha256": "124aa6808cf353e8d52d033427f9b8b63cb8a9f7acb0195c1d77ffa10fa55375",
+  "original_run_manifest_sha256": "cf39fbfbde3b4e3583cf5d125462736b18f974bd7877efa6c92b142f6abd902d",
+  "output_tokens": null,
+  "parameters": 25569,
+  "perspective": "side_to_move",
+  "prompt_hash_at_execution": null,
+  "provider_call_attempts": 1,
+  "provider_model_response": null,
+  "provider_requested": "Microsoft Foundry",
+  "provider_response_id": null,
+  "rejected_patches": 0,
+  "schema_version": "owc.research-run.v1",
+  "seed": 11,
+  "started_at_utc": "2026-11-13T21:14:41.905101+00:00",
+  "status": "failed_before_model_inference",
+  "stockfish_actual_nodes_dev": 28033,
+  "stockfish_actual_nodes_train": 308348,
+  "stockfish_node_budget_per_position": 1000,
+  "train_source": {
+    "label_sha256": "c13299cd1b815f085832f62f461ce06c3e259422ac53e153eaf4cb1f4f7f29a1",
+    "oracle": {
+      "binary": "/tmp/owc-stockfish/usr/games/stockfish",
+      "binary_sha256": "38faa5883b03652f847a87ed168b1bfee81b361db9584dae59a51cb91e69d9d6",
+      "cp_scale": 400.0,
+      "engine_id": {
+        "author": "the Stockfish developers (see AUTHORS file)",
+        "name": "Stockfish 17.1"
+      },
+      "nodes_requested": 1000,
+      "schema_version": "owc.stockfish.v1",
+      "target": "cp_tanh",
+      "transport": "direct-uci-smoke-v1",
+      "uci_options": {
+        "Hash": 16,
+        "Threads": 1,
+        "UCI_ShowWDL": false
+      },
+      "wdl_enabled": false
+    },
+    "records": 308,
+    "role": "train",
+    "source_sha256": "47632943d11ad5dcd7bf4bcc976a4d07877855b2d3771b093860f95f8187a2e4",
+    "target": "cp_tanh"
+  },
+  "usage_missing_reason": "DNS failure before a provider response",
+  "working_tree_dirty_at_run": true
+}

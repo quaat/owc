@@ -70,7 +70,13 @@ def test_e0_one_patch_and_no_teacher_disclosures(tmp_path: Path) -> None:
     assert math.isfinite(run["dev_mae"])
     assert agent.requests[0]["teacher_feedback"] == []
     assert "teacher_target" not in json.dumps(agent.requests[0])
+    assert agent.requests[0]["agent_context"]["input_dimensions"] == 781
+    assert agent.requests[0]["nonzero_state"]["total_nonzero"] == 0
+    assert agent.requests[0]["previous_rounds"] == []
     assert run["events_sha256"] == sha256_file(tmp_path / "run" / "events.jsonl")
+    event = json.loads((tmp_path / "run" / "events.jsonl").read_text())
+    assert "dev_mae_undisclosed" in event
+    assert "post_patch_probes" in event
 
 
 def test_e5_budget_and_feedback_visible_after_initial_patch(tmp_path: Path) -> None:
@@ -86,6 +92,8 @@ def test_e5_budget_and_feedback_visible_after_initial_patch(tmp_path: Path) -> N
     assert len(agent.requests) == 6
     assert agent.requests[0]["teacher_feedback"] == []
     assert all(len(req["teacher_feedback"]) == 2 for req in agent.requests[1:])
+    assert len(agent.requests[2]["previous_rounds"][-1]["teacher_feedback_disclosed"]) == 2
+    assert agent.requests[1]["nonzero_state"]["total_nonzero"] == 1
 
 
 def test_invalid_budget_refuses_to_create_run(tmp_path: Path) -> None:
@@ -163,6 +171,9 @@ def test_wrong_actor_fails_closed_with_manifest(tmp_path: Path) -> None:
             agent=BadAgent(), settings=ExperimentSettings(),
         )
     assert json.loads((tmp_path / "bad" / "manifest.json").read_text())["status"] == "failed"
+    event = json.loads((tmp_path / "bad" / "events.jsonl").read_text())
+    assert event["status"] == "rejected"
+    assert event["model_hash_after"] == event["request"]["model_hash"]
 
 
 @pytest.mark.parametrize("rounds", [-1, 1, 4, 6])

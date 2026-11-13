@@ -4,13 +4,26 @@ An experimental research project exploring **direct neural-network weight progra
 for chess position evaluation, with future Stockfish-guided feedback and a
 conventional gradient-trained baseline.
 
-This repository is **not yet a playable chess engine**. M0 provides a tested
-legal-position encoder, a small zero-initialized PyTorch network, and a CLI to
-inspect its outputs. All scores are 0 until a later milestone edits or trains
-the network.
+This repository is **not yet a playable chess engine**. It includes a tested
+legal-position encoder, a small zero-initialized PyTorch network, Stockfish
+labeling, auditable weight patches, a bounded development experiment runner,
+and supervised and handcrafted evaluation baselines. The initial neural
+network still scores 0 until a patch is applied or a separate model is trained.
 
 See [the development plan](docs/DEVELOPMENT_PLAN.md) for milestones M0–M5 and
 [agent instructions](AGENTS.md) for implementation standards.
+
+## Research archive
+
+The [M3 field trial report](docs/research/M3_FIELD_TRIAL_REPORT.md) is the
+entry point for issue #17's first Foundry integration attempt. It links the
+[protocol](docs/research/EXPERIMENT_PROTOCOL.md),
+[chronological log](docs/research/RESEARCH_LOG.md),
+[structured smoke results](reports/experiments/2026-11-13-smoke-pilot/),
+[article evidence register](docs/research/ARTICLE_EVIDENCE.md), and
+[independent-review next steps](docs/research/NEXT_STEPS.md).
+The 2026-11-13 E0 patch call failed before inference; no Astra weight edit
+or held-out result is claimed.
 
 ## Install (Python 3.12, CPU)
 
@@ -244,8 +257,9 @@ exact input semantics must be versioned when changed.
 
 - `python-chess` supplies legal move generation, position validation, and
   outcome detection; the neural network only computes a **static score**.
-- The M1 Stockfish oracle and dataset generation are available, and M2 adds
-  direct weight-editing sessions. Autonomous agent experiments, supervised
-  training, independent search and UCI remain future milestones.
+- The M1 Stockfish oracle and dataset generation, M2 direct weight-editing
+  sessions, and M3 experiment runner and baselines are available. Independent
+  search and UCI remain future milestones. No successful real Astra weight
+  patch is claimed by the current research archive.
 - Stockfish-derived labels and benchmark results must keep strict test-set
   isolation and explicit engine/version/settings provenance.

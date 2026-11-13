@@ -1,0 +1,5 @@
+condition,role,positions,metric,value
+zero,development,28,mae,0.722732457937384
+handcrafted,development,28,mae,0.2583377147571239
+Adam_supervised,development,28,mae,0.704238772392273
+Astra_E0,development,28,mae,

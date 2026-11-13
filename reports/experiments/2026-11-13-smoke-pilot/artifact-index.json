@@ -1,0 +1,332 @@
+{
+  "artifacts": [
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "datasets:astra-smoke-30:dev.fen",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".fen",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "f3bbd31834e2e131af44a0733f8316a13085f956e17904fc7384afcd8cc6ecab",
+      "size_bytes": 1774,
+      "storage_location": "datasets/astra-smoke-30/dev.fen"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "datasets:astra-smoke-30:dev.labels.jsonl",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".jsonl",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "0163e99d8436290e0edff3dbcdcfed7e54f35d6aa35de4d6a96c38c80b899b03",
+      "size_bytes": 12291,
+      "storage_location": "datasets/astra-smoke-30/dev.labels.jsonl"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "datasets:astra-smoke-30:dev.labels.jsonl.manifest.json",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".json",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "98577c2c59c611ce78e63baaaeca0c17a8003182dec4967eaa3d5803577e314e",
+      "size_bytes": 1081,
+      "storage_location": "datasets/astra-smoke-30/dev.labels.jsonl.manifest.json"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "datasets:astra-smoke-30:dev.meta.jsonl",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".jsonl",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "3a6ca2236b93a1dcfaedc697587c0e1df4e1dac0733b44ffb7d089ce0e5525a0",
+      "size_bytes": 3230,
+      "storage_location": "datasets/astra-smoke-30/dev.meta.jsonl"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "datasets:astra-smoke-30:manifest.json",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".json",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "962352c3d586a5800f6a0ebbb303358fae6986d0f6e8cf57594ded0deeb91f78",
+      "size_bytes": 1350,
+      "storage_location": "datasets/astra-smoke-30/manifest.json"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "datasets:astra-smoke-30:train.fen",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".fen",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "47632943d11ad5dcd7bf4bcc976a4d07877855b2d3771b093860f95f8187a2e4",
+      "size_bytes": 19388,
+      "storage_location": "datasets/astra-smoke-30/train.fen"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "datasets:astra-smoke-30:train.labels.jsonl",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".jsonl",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "c13299cd1b815f085832f62f461ce06c3e259422ac53e153eaf4cb1f4f7f29a1",
+      "size_bytes": 137207,
+      "storage_location": "datasets/astra-smoke-30/train.labels.jsonl"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "datasets:astra-smoke-30:train.labels.jsonl.manifest.json",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".json",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "b8f833fddecab2cbf02bd6b2cd011df8bf5f5145fdcf1d115bde41bfba4bf92b",
+      "size_bytes": 1086,
+      "storage_location": "datasets/astra-smoke-30/train.labels.jsonl.manifest.json"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "datasets:astra-smoke-30:train.meta.jsonl",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".jsonl",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "fd9e0b0e52f3d6c1fa191f411acba86fb2d8fbe3c6c9c5e48c86fdc2a416130b",
+      "size_bytes": 35404,
+      "storage_location": "datasets/astra-smoke-30/train.meta.jsonl"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "runs:astra-smoke-e0-attempt1:E0-seed-11:events.jsonl",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot-e0-attempt1"
+      ],
+      "format": ".jsonl",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "124aa6808cf353e8d52d033427f9b8b63cb8a9f7acb0195c1d77ffa10fa55375",
+      "size_bytes": 2392,
+      "storage_location": "runs/astra-smoke-e0-attempt1/E0-seed-11/events.jsonl"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "runs:astra-smoke-e0-attempt1:E0-seed-11:manifest.json",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot-e0-attempt1"
+      ],
+      "format": ".json",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "cf39fbfbde3b4e3583cf5d125462736b18f974bd7877efa6c92b142f6abd902d",
+      "size_bytes": 1843,
+      "storage_location": "runs/astra-smoke-e0-attempt1/E0-seed-11/manifest.json"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "runs:astra-smoke-e0-attempt1:E0-seed-11:weights:HEAD",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot-e0-attempt1"
+      ],
+      "format": "text",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "7e23474635e65499324862abee4e3379b2ef3d0c0f9615529fa94be8f9168af3",
+      "size_bytes": 33,
+      "storage_location": "runs/astra-smoke-e0-attempt1/E0-seed-11/weights/HEAD"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "runs:astra-smoke-e0-attempt1:E0-seed-11:weights:revisions:5fdedee893f44c5aa1e0c9bc5a27bec9:manifest.json",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot-e0-attempt1"
+      ],
+      "format": ".json",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "0c806ac55586ac6d01c992a3233b3edde1cc69f497e9786abdf4b0e4aca6377a",
+      "size_bytes": 462,
+      "storage_location": "runs/astra-smoke-e0-attempt1/E0-seed-11/weights/revisions/5fdedee893f44c5aa1e0c9bc5a27bec9/manifest.json"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "runs:astra-smoke-e0-attempt1:E0-seed-11:weights:revisions:5fdedee893f44c5aa1e0c9bc5a27bec9:weights.npz",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot-e0-attempt1"
+      ],
+      "format": ".npz",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "e7b896506bc29fe95406ab3b93e9b91462f7d948e0f535f76ad6112435e7d1e9",
+      "size_bytes": 1388,
+      "storage_location": "runs/astra-smoke-e0-attempt1/E0-seed-11/weights/revisions/5fdedee893f44c5aa1e0c9bc5a27bec9/weights.npz"
+    },
+    {
+      "access": "local only; internal endpoint; do not publish raw",
+      "artifact_id": "runs:astra-smoke-e0-attempt1:diagnostics:1794604482831206128-3396f4c1e24040f0ab6d797556dfde41.json",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot-e0-attempt1"
+      ],
+      "format": ".json",
+      "original": true,
+      "purpose": "original provider adapter diagnostic",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "28d94160c07433db543a55a9e4f84c5d22a934383fb9da4e04d65e02ac4b424b",
+      "size_bytes": 3459,
+      "storage_location": "runs/astra-smoke-e0-attempt1/diagnostics/1794604482831206128-3396f4c1e24040f0ab6d797556dfde41.json"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "runs:astra-smoke-supervised-seed11:manifest.json",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot-adam-seed11"
+      ],
+      "format": ".json",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "da03348518f603c214ffe3212cc2a5a4e05b47b3bf5c9d16f508c1ce9935d6a2",
+      "size_bytes": 2944,
+      "storage_location": "runs/astra-smoke-supervised-seed11/manifest.json"
+    },
+    {
+      "access": "local ignored artifact; not committed",
+      "artifact_id": "runs:astra-smoke-supervised-seed11:weights.npz",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot-adam-seed11"
+      ],
+      "format": ".npz",
+      "original": true,
+      "purpose": "original local data or run artifact",
+      "retention": "workspace only; no durable external store configured",
+      "sha256": "8b77d2c1917bb43a0a7a833266b6621de6d758c602a382f92ebf543a590a2138",
+      "size_bytes": 95908,
+      "storage_location": "runs/astra-smoke-supervised-seed11/weights.npz"
+    },
+    {
+      "access": "same OS owner; NOT a sealed held-out benchmark",
+      "artifact_id": "generated-test:test.fen",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".fen",
+      "original": true,
+      "purpose": "generated split; never labeled or evaluated in this session",
+      "retention": "temporary local storage; no durable guarantee",
+      "sha256": "2e1f43d3b43f26f6bcbfc6aeae6909922519ad1eab60ced817eb465f4d5fdf10",
+      "sha256_status": "declared by dataset manifest; not independently rehashed",
+      "size_bytes": null,
+      "storage_location": "local /tmp/owc-astra-smoke-heldout-30/test.fen"
+    },
+    {
+      "access": "same OS owner; NOT a sealed held-out benchmark",
+      "artifact_id": "generated-test:test.meta.jsonl",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".jsonl",
+      "original": true,
+      "purpose": "generated split; never labeled or evaluated in this session",
+      "retention": "temporary local storage; no durable guarantee",
+      "sha256": "545a45b5258a606015b395f46de18596dfd647e077d75706b5df89ac0142578f",
+      "sha256_status": "declared by dataset manifest; not independently rehashed",
+      "size_bytes": null,
+      "storage_location": "local /tmp/owc-astra-smoke-heldout-30/test.meta.jsonl"
+    },
+    {
+      "access": "same OS owner; NOT a sealed held-out benchmark",
+      "artifact_id": "generated-test:manifest.json",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".json",
+      "original": true,
+      "purpose": "generated test split manifest; not read in this archive",
+      "retention": "temporary local storage; no durable guarantee",
+      "sha256": null,
+      "sha256_status": "not inspected; missing independently verified checksum",
+      "size_bytes": null,
+      "storage_location": "local /tmp/owc-astra-smoke-heldout-30/manifest.json"
+    },
+    {
+      "access": "local only; do not publish raw",
+      "artifact_id": "external-local:owc_astra_connection.py",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".py",
+      "original": true,
+      "purpose": "original nonce connection script; embeds internal endpoint",
+      "retention": "temporary local storage; no durable guarantee",
+      "sha256": "964a64a01a3712904988b8bfbf421fcfebf91b42bc715cf131fcc960006d761c",
+      "size_bytes": 1577,
+      "storage_location": "/tmp/owc_astra_connection.py"
+    },
+    {
+      "access": "local system package; do not commit binary",
+      "artifact_id": "external-local:stockfish_17-1_amd64.deb",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": ".deb",
+      "original": true,
+      "purpose": "downloaded Debian Stockfish 17-1 package",
+      "retention": "temporary local storage; no durable guarantee",
+      "sha256": "05a3fc698931f7b8c5faf8cdf3e2212e2bb971ce35d468085570d6f025e57ea1",
+      "size_bytes": 61079928,
+      "storage_location": "/tmp/stockfish_17-1_amd64.deb"
+    },
+    {
+      "access": "local binary; do not commit",
+      "artifact_id": "external-local:stockfish",
+      "experiment_ids": [
+        "owc-m3-20261113-smoke-pilot"
+      ],
+      "format": "executable",
+      "original": true,
+      "purpose": "extracted Stockfish 17.1 executable used for teacher labels",
+      "retention": "temporary local storage; no durable guarantee",
+      "sha256": "38faa5883b03652f847a87ed168b1bfee81b361db9584dae59a51cb91e69d9d6",
+      "size_bytes": 78749168,
+      "storage_location": "/tmp/owc-stockfish/usr/games/stockfish"
+    }
+  ],
+  "durable_raw_archive_available": false,
+  "experiment_id": "owc-m3-20261113-smoke-pilot",
+  "schema_version": "owc.research-artifact-index.v1"
+}

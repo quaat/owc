@@ -1,0 +1,8 @@
+experiment_id,seed,condition,iteration,model_hash,feedback_disclosures,elapsed_seconds,metric_name,metric_value,model_calls_completed,input_tokens,output_tokens,provenance
+owc-m3-20261113-smoke-pilot-e0-attempt1,11,E0,0,11eb14dd2b0d22f7a1d3587f2469d0983159c739f83df90fb9448bebfb279f3c,0,,dev_mae,0.722732457937384,0,,,derived_zero_model_before_attempt
+owc-m3-20261113-smoke-pilot-e0-attempt1,11,E0,1,11eb14dd2b0d22f7a1d3587f2469d0983159c739f83df90fb9448bebfb279f3c,0,1.1067045850213617,dev_mae,0.722732457937384,0,,,derived_unchanged_model_after_failed_invocation
+owc-m3-20261113-smoke-pilot-adam-seed11,11,Adam_supervised,1,,0,,dev_mae,0.7227121591567993,0,,,original_trainer_epoch_manifest
+owc-m3-20261113-smoke-pilot-adam-seed11,11,Adam_supervised,2,,0,,dev_mae,0.7162044644355774,0,,,original_trainer_epoch_manifest
+owc-m3-20261113-smoke-pilot-adam-seed11,11,Adam_supervised,3,,0,,dev_mae,0.7110034823417664,0,,,original_trainer_epoch_manifest
+owc-m3-20261113-smoke-pilot-adam-seed11,11,Adam_supervised,4,,0,,dev_mae,0.7055872678756714,0,,,original_trainer_epoch_manifest
+owc-m3-20261113-smoke-pilot-adam-seed11,11,Adam_supervised,5,2d2b4c805af32abb31cc210bbbaf085aa4d6f2ca39025ccceeeb3e662c3dbb4a,0,,dev_mae,0.704238772392273,0,,,original_trainer_epoch_manifest

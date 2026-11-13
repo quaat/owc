@@ -1,0 +1,117 @@
+{
+  "architecture": "781->32 ReLU->16 ReLU->1 tanh",
+  "batch_size": 32,
+  "checkpoint_sha256": "8b77d2c1917bb43a0a7a833266b6621de6d758c602a382f92ebf543a590a2138",
+  "condition": "Adam_supervised",
+  "dataset_license": "generated-in-repository",
+  "dataset_manifest_sha256": "962352c3d586a5800f6a0ebbb303358fae6986d0f6e8cf57594ded0deeb91f78",
+  "dataset_source": "30 synthetic random legal games; integration smoke only",
+  "dev_mae_final": 0.704238772392273,
+  "dev_mae_initial": null,
+  "dev_source": {
+    "label_sha256": "0163e99d8436290e0edff3dbcdcfed7e54f35d6aa35de4d6a96c38c80b899b03",
+    "oracle": {
+      "binary": "/tmp/owc-stockfish/usr/games/stockfish",
+      "binary_sha256": "38faa5883b03652f847a87ed168b1bfee81b361db9584dae59a51cb91e69d9d6",
+      "cp_scale": 400.0,
+      "engine_id": {
+        "author": "the Stockfish developers (see AUTHORS file)",
+        "name": "Stockfish 17.1"
+      },
+      "nodes_requested": 1000,
+      "schema_version": "owc.stockfish.v1",
+      "target": "cp_tanh",
+      "transport": "direct-uci-smoke-v1",
+      "uci_options": {
+        "Hash": 16,
+        "Threads": 1,
+        "UCI_ShowWDL": false
+      },
+      "wdl_enabled": false
+    },
+    "records": 28,
+    "role": "dev",
+    "source_sha256": "f3bbd31834e2e131af44a0733f8316a13085f956e17904fc7384afcd8cc6ecab",
+    "target": "cp_tanh"
+  },
+  "development_positions_evaluated_per_epoch": 28,
+  "elapsed_seconds": 0.49710616702213883,
+  "encoding_version": "owc.raw781.v1",
+  "epoch_trajectory": [
+    {
+      "dev_mae": 0.7227121591567993,
+      "epoch": 1,
+      "train_mae": 0.6843927502632141
+    },
+    {
+      "dev_mae": 0.7162044644355774,
+      "epoch": 2,
+      "train_mae": 0.6705123782157898
+    },
+    {
+      "dev_mae": 0.7110034823417664,
+      "epoch": 3,
+      "train_mae": 0.6551998853683472
+    },
+    {
+      "dev_mae": 0.7055872678756714,
+      "epoch": 4,
+      "train_mae": 0.637855052947998
+    },
+    {
+      "dev_mae": 0.704238772392273,
+      "epoch": 5,
+      "train_mae": 0.6154899597167969
+    }
+  ],
+  "epochs": 5,
+  "evaluation_role": "development_only",
+  "experiment_id": "owc-m3-20261113-smoke-pilot-adam-seed11",
+  "final_model_hash": "2d2b4c805af32abb31cc210bbbaf085aa4d6f2ca39025ccceeeb3e662c3dbb4a",
+  "git_commit_at_run": "8417fbb939dc465aca269aef80dcd7cad5bc940e",
+  "heldout_isolated": false,
+  "initial_hash_missing_reason": "Initialization hash not recorded by original trainer",
+  "initial_mae_missing_reason": "Original trainer did not measure initial random model",
+  "initial_model_hash": null,
+  "learning_rate": 0.001,
+  "model_provider": null,
+  "optimizer_updates": 20,
+  "original_manifest_sha256": "da03348518f603c214ffe3212cc2a5a4e05b47b3bf5c9d16f508c1ce9935d6a2",
+  "parameters": 25569,
+  "perspective": "side_to_move",
+  "schema_version": "owc.research-run.v1",
+  "seed": 11,
+  "status": "completed",
+  "stockfish_actual_nodes_dev": 28033,
+  "stockfish_actual_nodes_train": 308348,
+  "stockfish_node_budget_per_position": 1000,
+  "train_source": {
+    "label_sha256": "c13299cd1b815f085832f62f461ce06c3e259422ac53e153eaf4cb1f4f7f29a1",
+    "oracle": {
+      "binary": "/tmp/owc-stockfish/usr/games/stockfish",
+      "binary_sha256": "38faa5883b03652f847a87ed168b1bfee81b361db9584dae59a51cb91e69d9d6",
+      "cp_scale": 400.0,
+      "engine_id": {
+        "author": "the Stockfish developers (see AUTHORS file)",
+        "name": "Stockfish 17.1"
+      },
+      "nodes_requested": 1000,
+      "schema_version": "owc.stockfish.v1",
+      "target": "cp_tanh",
+      "transport": "direct-uci-smoke-v1",
+      "uci_options": {
+        "Hash": 16,
+        "Threads": 1,
+        "UCI_ShowWDL": false
+      },
+      "wdl_enabled": false
+    },
+    "records": 308,
+    "role": "train",
+    "source_sha256": "47632943d11ad5dcd7bf4bcc976a4d07877855b2d3771b093860f95f8187a2e4",
+    "target": "cp_tanh"
+  },
+  "training_label_presentations": 500,
+  "training_positions_distinct": 100,
+  "working_tree_dirty_at_run": true
+}
