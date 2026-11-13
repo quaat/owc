@@ -105,3 +105,7 @@ Do not compute a p-value merely to make a claim look stronger. Publish raw estim
 6. Manuscript target audience (research note, reproducibility report or peer-reviewed article); a publication claim register should follow the strictest intended standard.
 
 *Keep this document labeled as a proposal until a frozen version is committed before a genuine scientific campaign.*
+
+## E0 cost/operational gate update (13 November 2026)
+
+The merged adapter now enforces a 32,000-byte provider JSON payload cap on the **isolated E0** path and a 3,000-output-token limit. [The source and conditional estimate](../research/ISSUE_20_COST_BUDGET.md) documents official Azure prices, a proposed $2 single-call project ceiling and the need to verify the actual deployment tariff. This is a prospective operational gate, not a completed E0 experiment or a hard real-time Azure spending limit. Do not relax the cap, start E5, or use hidden-test information without a new reviewed protocol decision.

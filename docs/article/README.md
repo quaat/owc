@@ -24,3 +24,5 @@ register and technical report before amending the manuscript. Treat missing
 costs, missing labels and unavailable results as missing, not zero. Do not put
 secrets, private Foundry URLs, restricted corpora or raw sensitive transcripts
 in this public directory.
+
+**Latest engineering gate:** [PR #18](https://github.com/quaat/owc/pull/18) is merged, [#19](https://github.com/quaat/owc/issues/19) closed; [#20](https://github.com/quaat/owc/issues/20) remains open because no real Astra-generated patch has been recorded. See the [cost review](../research/ISSUE_20_COST_BUDGET.md).

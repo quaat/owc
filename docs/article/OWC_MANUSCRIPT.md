@@ -135,6 +135,16 @@ As of this preliminary report, **H1 and H2 are untested**. There is no Astra-aut
 
 This manuscript is a traceable **protocol and negative/incomplete integration report**. It can be developed into a substantive comparative article only when genuine model edits and independent outcomes are available. A future version should add the full experimental trajectories, case studies of successful and failed patches, cost-normalized comparison charts, confidence intervals, and an explicit accounting of the relationship between model reasoning and chess heuristics compiled into weights.
 
+## Post-trial engineering update (13 November 2026; not a new experimental result)
+
+Following independent review of the first field-trial archive, OWC's adapter and diagnostic safeguards were improved and merged into `main` via [PR #18](https://github.com/quaat/owc/pull/18), which also closed [issue #19](https://github.com/quaat/owc/issues/19). This includes canonical serialized request-size checks, compact feedback history, private raw transcript retention, pre-call request/instruction/source hashes, explicit response-model mapping and regression tests. GitHub Actions verified 74 tests and lint for the final experimental branch.
+
+A separate isolated-process preflight reached the authenticated Foundry model listing and showed that a known synthetic test path was inaccessible from that namespace. This is **not** proof of a general sealed-test boundary: the mount configuration still exposes other portions of the host filesystem as read-only. No new model-generated chess patch, E5 feedback, hidden-test result or game-strength result was obtained.
+
+For one future E0 attempt, the adapter now enforces a **32,000-byte complete provider-request limit** and the isolated launcher limits generation to **3,000 output tokens**. Microsoft's published [GPT-6 Astra Standard token prices](https://azure.microsoft.com/en-us/blog/gpt-6-astra-sol-and-luna-for-production-agents-in-microsoft-foundry/) allow a conditional estimate of **$1.038** at EU Data Zone long-context rates when using a conservative 32,000-input/3,000-output-token scenario. This estimate is neither a verified price for the actual deployment nor a billing guarantee. The actual SKU and an appropriate spending decision must be verified before the single paid call. See [the cost-gate record](../research/ISSUE_20_COST_BUDGET.md) and [issue #20](https://github.com/quaat/owc/issues/20).
+
+This update changes the project's engineering readiness, **not** the empirical conclusions in Sections 3–6. The central H1 and H2 hypotheses remain untested.
+
 ## References and source material
 
 1. Takehi, R., Teoh, J., Zhang, A., and Khattab, O. (2026, November 2). *Sparks of Weight-Space Programming: LLMs can natively read & write neural network weights*. [Research blog post](https://rikiyat.github.io/blog/weight-space-programming/). Exploratory claims are attributed to the authors; not treated here as independently established OWC results.
