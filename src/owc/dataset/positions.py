@@ -57,7 +57,7 @@ class GamePositions:
 
 def assign_split(group_id: str, settings: DatasetSettings) -> str:
     """Stable per-game assignment; never make random splits by FEN or ply."""
-    digest = hashlib.sha256(f"{settings.seed}:{group_id}".encode("utf-8")).digest()
+    digest = hashlib.sha256(f"{settings.seed}:{group_id}".encode()).digest()
     value = int.from_bytes(digest[:8], "big") / (1 << 64)
     if value < settings.train_fraction:
         return "train"
