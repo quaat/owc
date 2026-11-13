@@ -5,7 +5,6 @@ not held-out TEST labels, and reveals teacher targets only in charged feedback
 rounds. Actual isolation against an untrusted executable requires OS sandboxing.
 """
 
-import hashlib
 import json
 import math
 import random
