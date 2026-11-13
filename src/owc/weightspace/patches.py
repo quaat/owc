@@ -32,7 +32,7 @@ def model_hash(model: nn.Module) -> str:
 
 
 def _number(value: object, field: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    if isinstance(value, bool) or not isinstance(value, int | float):
         raise ValueError(f"{field} must be a number")
     result = float(value)
     if not math.isfinite(result) or abs(result) > MAX_MAGNITUDE:
@@ -79,7 +79,7 @@ def _apply_single(
             raise ValueError("Scalar index must identify exactly one tensor element")
         index = tuple(
             _index(idx, size, f"index dimension {dimension}")
-            for dimension, (idx, size) in enumerate(zip(raw_index, tensor.shape))
+            for dimension, (idx, size) in enumerate(zip(raw_index, tensor.shape, strict=True))
         )
         value = _number(op["value"], "value")
         if kind == "set":
