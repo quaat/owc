@@ -4,9 +4,12 @@ Configuration is supplied through environment variables, never experiment JSON.
 The external command still needs OS isolation from sealed test material.
 """
 
+import base64
 import hashlib
 import json
 import os
+import re
+import stat
 import sys
 import time
 import urllib.error
@@ -17,6 +20,7 @@ from urllib.parse import urlparse
 
 import torch
 
+from owc.experiments.request_wire import MAX_REQUEST_BYTES, canonical_bytes
 from owc.models.raw_mlp import RawMLP
 from owc.weightspace.patches import (
     MAX_MAGNITUDE,
@@ -26,8 +30,8 @@ from owc.weightspace.patches import (
     _apply_single,
 )
 
-MAX_REQUEST_BYTES = 256_000
 MAX_RESPONSE_BYTES = 1_000_000
+PUBLIC_IDENTIFIER = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 SYSTEM_INSTRUCTIONS = """You are the declared direct weight-programming agent for OWC.
 Return exactly one owc.weightpatch.v1 JSON object, with keys schema_version,
@@ -111,21 +115,77 @@ def _extract_patch(response: dict, expected_hash: str, actor: str) -> dict:
     return patch
 
 
-def _diagnostic(data: dict) -> None:
+def _diagnostic_directory() -> Path:
     directory = os.environ.get("OWC_ASTRA_DIAGNOSTICS_DIR")
     if not directory:
-        return
+        raise ValueError(
+            "OWC_ASTRA_DIAGNOSTICS_DIR is required for restricted transcript retention"
+        )
     path = Path(directory)
-    path.mkdir(parents=True, exist_ok=True)
-    with (path / f"{time.time_ns()}-{uuid.uuid4().hex}.json").open("x") as stream:
-        json.dump(data, stream, sort_keys=True, indent=2, allow_nan=False)
-        stream.write("\n")
+    path.mkdir(mode=0o700, parents=True, exist_ok=True)
+    info = path.stat()
+    if (path.is_symlink() or not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
+            or stat.S_IMODE(info.st_mode) & 0o077):
+        raise PermissionError("Diagnostics directory must be owned by adapter and mode 0700")
+    return path
+
+
+def _write_private(path: Path, data: bytes) -> None:
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags, 0o600)
+    with os.fdopen(descriptor, "wb") as stream:
+        stream.write(data)
+
+
+def _diagnostic(directory: Path, data: dict) -> None:
+    def public_identifier(value: object) -> str | None:
+        return value if isinstance(value, str) and PUBLIC_IDENTIFIER.fullmatch(value) else None
+
+    usage = data.get("usage")
+    public_usage = None
+    if isinstance(usage, dict):
+        public_usage = {
+            key: usage.get(key) if isinstance(usage.get(key), int)
+            and not isinstance(usage.get(key), bool) and usage[key] >= 0 else None
+            for key in ("input_tokens", "output_tokens", "total_tokens")
+        }
+    stem = f"{time.time_ns()}-{uuid.uuid4().hex}"
+    raw = (json.dumps(data, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
+    _write_private(directory / f"{stem}.restricted.json", raw)
+    public = {
+        "adapter_version": data["adapter_version"],
+        "status": data.get("status"),
+        "error_type": data.get("error_type"),
+        "failure_reason_code": data.get("failure_reason_code"),
+        "http_status": data.get("http_status"),
+        "deployment_requested": public_identifier(data.get("deployment_requested")),
+        "model_reported": public_identifier(data.get("model_reported")),
+        "response_model_policy": data.get("response_model_policy"),
+        "request_id_header": public_identifier(data.get("request_id_header")),
+        "response_id": public_identifier(data.get("response_id")),
+        "usage": public_usage,
+        "elapsed_seconds": data.get("elapsed_seconds"),
+        "agent_request_sha256": data.get("agent_request_sha256"),
+        "provider_request_sha256": data.get("provider_request_sha256"),
+        "provider_response_sha256": data.get("provider_response_sha256"),
+        "instructions_sha256": data.get("instructions_sha256"),
+        "adapter_source_sha256": data.get("adapter_source_sha256"),
+        "restricted_transcript_sha256": hashlib.sha256(raw).hexdigest(),
+    }
+    _write_private(
+        directory / f"{stem}.public.json",
+        (json.dumps(public, sort_keys=True, indent=2, allow_nan=False) + "\n").encode(),
+    )
 
 
 def main() -> int:
     started = time.monotonic()
     diagnostic: dict = {"adapter_version": "owc.foundry-responses.v1"}
+    directory = None
+    patch = None
+    error_message = None
     try:
+        directory = _diagnostic_directory()
         request = _read_request()
         endpoint = _endpoint()
         deployment = os.environ.get("OWC_ASTRA_DEPLOYMENT", "gpt-6-astra")
@@ -146,13 +206,15 @@ def main() -> int:
         diagnostic.update({
             "endpoint": endpoint, "deployment_requested": deployment,
             "actor": actor, "parameters": {"max_output_tokens": max_tokens,
-                                      "text_format": "json_object"},
-            "request_sha256": hashlib.sha256(
-                json.dumps(payload, sort_keys=True).encode()
-            ).hexdigest(),
+                                      "text_format": "json_object", "timeout_seconds": timeout},
+            "agent_request_sha256": hashlib.sha256(canonical_bytes(request)).hexdigest(),
+            "instructions_sha256": hashlib.sha256(SYSTEM_INSTRUCTIONS.encode()).hexdigest(),
+            "adapter_source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "agent_request": request,
         })
-        wire = json.dumps(payload, allow_nan=False).encode()
+        wire = canonical_bytes(payload)
+        diagnostic["provider_request_sha256"] = hashlib.sha256(wire).hexdigest()
+        diagnostic["provider_request_raw_b64"] = base64.b64encode(wire).decode()
         http_request = urllib.request.Request(
             endpoint, data=wire, method="POST",
             headers={"Content-Type": "application/json",
@@ -162,35 +224,72 @@ def main() -> int:
             raw = response.read(MAX_RESPONSE_BYTES + 1)
             if len(raw) > MAX_RESPONSE_BYTES:
                 raise ValueError("Provider response exceeds byte limit")
-            provider_response = json.loads(raw)
+            diagnostic["provider_response_raw_b64"] = base64.b64encode(raw).decode()
+            diagnostic["provider_response_sha256"] = hashlib.sha256(raw).hexdigest()
             diagnostic["http_status"] = response.status
             diagnostic["request_id_header"] = response.headers.get("x-request-id")
+        provider_response = json.loads(raw)
+        if not isinstance(provider_response, dict):
+            raise ValueError("Provider response must be a JSON object")
         diagnostic.update({
             "provider_response": provider_response,
             "response_id": provider_response.get("id"),
             "model_reported": provider_response.get("model"),
             "usage": provider_response.get("usage"),
         })
-        if provider_response.get("model") != deployment:
-            raise ValueError("Provider-reported model differs from requested deployment")
+        reported = provider_response.get("model")
+        if reported == deployment:
+            diagnostic["response_model_policy"] = "exact_match"
+        elif (os.environ.get("OWC_ASTRA_ALLOWED_RESPONSE_MODEL")
+              and reported == os.environ["OWC_ASTRA_ALLOWED_RESPONSE_MODEL"]):
+            diagnostic["response_model_policy"] = "operator_allowed_mapping"
+        else:
+            raise ValueError("Provider-reported model has no explicit allowed mapping")
         patch = _extract_patch(provider_response, request["model_hash"], actor)
         diagnostic["patch"] = patch
         diagnostic["status"] = "completed"
-        print(json.dumps(patch, sort_keys=True, allow_nan=False))
-        return 0
     except urllib.error.HTTPError as error:
+        try:
+            error_body = error.read(MAX_RESPONSE_BYTES + 1)
+            if len(error_body) <= MAX_RESPONSE_BYTES:
+                diagnostic["provider_response_raw_b64"] = base64.b64encode(error_body).decode()
+                diagnostic["provider_response_sha256"] = hashlib.sha256(error_body).hexdigest()
+            diagnostic["request_id_header"] = error.headers.get("x-request-id")
+        except OSError:
+            pass
         diagnostic.update({"status": "failed", "http_status": error.code,
-                           "error_type": "HTTPError"})
-        print(f"Foundry HTTP {error.code}; see adapter diagnostics", file=sys.stderr)
-        return 1
-    except (KeyError, ValueError, OSError, TimeoutError) as error:
+                           "error_type": "HTTPError", "failure_reason_code": "http_error"})
+        error_message = f"Foundry HTTP {error.code}; see adapter diagnostics"
+    except (KeyError, ValueError, OSError, TimeoutError, AttributeError, TypeError) as error:
+        if isinstance(error, TimeoutError):
+            reason_code = "provider_timeout"
+        elif isinstance(error, urllib.error.URLError):
+            reason_code = "network_error"
+        elif isinstance(error, PermissionError):
+            reason_code = "diagnostics_permission_error"
+        elif isinstance(error, ValueError) and "model" in str(error).lower():
+            reason_code = "model_identity_or_response_error"
+        else:
+            reason_code = "adapter_validation_or_io_error"
         diagnostic.update({"status": "failed", "error_type": type(error).__name__,
-                           "error": str(error)[:500]})
-        print(f"Astra adapter failed: {type(error).__name__}: {error}", file=sys.stderr)
+                           "error": str(error)[:500],
+                           "failure_reason_code": reason_code})
+        error_message = f"Astra adapter failed: {type(error).__name__}; see restricted diagnostics"
+    diagnostic["elapsed_seconds"] = time.monotonic() - started
+    if directory is not None:
+        try:
+            _diagnostic(directory, diagnostic)
+        except OSError as error:
+            print(
+                f"Astra adapter diagnostic write failed: {type(error).__name__}",
+                file=sys.stderr,
+            )
+            return 1
+    if error_message is not None:
+        print(error_message, file=sys.stderr)
         return 1
-    finally:
-        diagnostic["elapsed_seconds"] = time.monotonic() - started
-        _diagnostic(diagnostic)
+    print(json.dumps(patch, sort_keys=True, allow_nan=False))
+    return 0
 
 
 if __name__ == "__main__":

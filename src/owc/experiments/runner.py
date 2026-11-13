@@ -5,6 +5,7 @@ not held-out TEST labels, and reveals teacher targets only in charged feedback
 rounds. Actual isolation against an untrusted executable requires OS sandboxing.
 """
 
+import hashlib
 import json
 import math
 import os
@@ -23,6 +24,12 @@ import torch
 
 from owc.board.encoding import ENCODING_VERSION, encode_board, parse_legal_fen
 from owc.dataset.positions import DATASET_VERSION
+from owc.experiments.request_wire import (
+    MAX_REQUEST_BYTES,
+    RequestSizeError,
+    bounded_request,
+    canonical_bytes,
+)
 from owc.oracle.stockfish import LABEL_VERSION, sha256_file
 from owc.weightspace.patches import PATCH_SCHEMA
 from owc.weightspace.session import WeightSession
@@ -93,9 +100,12 @@ class CommandAgent:
         self.identity = identity
 
     def propose(self, request: dict, timeout_seconds: float) -> dict:
+        wire = canonical_bytes(request)
+        if len(wire) > MAX_REQUEST_BYTES:
+            raise RequestSizeError(f"Agent request exceeds {MAX_REQUEST_BYTES} bytes")
         completed = subprocess.run(
             self.command,
-            input=json.dumps(request, sort_keys=True),
+            input=wire.decode("utf-8"),
             capture_output=True,
             text=True,
             timeout=timeout_seconds,
@@ -282,6 +292,7 @@ def run_experiment(
         "environment": _environment(),
         "feedback_definition": "disclosed precomputed dev teacher labels, repetitions count",
         "live_stockfish_queries": 0,
+        "agent_request_max_bytes": MAX_REQUEST_BYTES,
         "status": "running",
         "started_at_utc": datetime.now(UTC).isoformat(),
     }
@@ -304,8 +315,7 @@ def run_experiment(
                     }
                     for p, prediction in zip(probes, baseline, strict=True)
                 ]
-                disclosures += len(feedback)
-                if disclosures > settings.max_label_disclosures:
+                if disclosures + len(feedback) > settings.max_label_disclosures:
                     raise ValueError("Feedback disclosure budget exceeded")
             request = {
                 "protocol": RUN_SCHEMA,
@@ -316,7 +326,8 @@ def run_experiment(
                 "model_tensors": state["tensors"],
                 "nonzero_state": _nonzero_state(session),
                 "agent_context": AGENT_CONTEXT,
-                "previous_rounds": history[-5:],
+                "previous_rounds": [dict(item) for item in history[-5:]],
+                "previous_rounds_omitted": max(0, len(history) - 5),
                 "blind_probes": [
                     {"fen": p["fen"], "prediction": prediction}
                     for p, prediction in zip(probes, baseline, strict=True)
@@ -325,7 +336,7 @@ def run_experiment(
                 "constraints": {
                     "no_gradient_optimizer": True,
                     "patch_schema": PATCH_SCHEMA,
-                    "label_disclosures_used": disclosures,
+                    "label_disclosures_used": disclosures + len(feedback),
                     "label_disclosures_budget": settings.max_label_disclosures,
                 },
             }
@@ -333,16 +344,25 @@ def run_experiment(
             if remaining <= 0:
                 raise TimeoutError("Total experiment wall-clock budget exceeded")
             patch = None
+            wire = None
             try:
+                request, wire = bounded_request(request)
+                disclosures += len(feedback)
                 patch = agent.propose(request, remaining)
                 if not isinstance(patch, dict) or patch.get("actor") != agent.identity:
                     raise ValueError("Patch actor must match the declared agent identity")
                 outcome = session.apply(patch)
             except Exception as error:
+                audit_request = request if not isinstance(error, RequestSizeError) else {
+                    "protocol": RUN_SCHEMA, "round": step,
+                    "model_hash": state["model_hash"],
+                    "request_size_error": str(error),
+                }
                 _append_event(log, {
-                    "round": step, "request": request, "response_patch": patch,
+                    "round": step, "request": audit_request, "response_patch": patch,
                     "status": "rejected", "error_type": type(error).__name__,
                     "error": str(error)[:500],
+                    "request_sha256": hashlib.sha256(wire).hexdigest() if wire else None,
                     "model_hash_after": session.inspect(max_values=0)["model_hash"],
                     "elapsed_seconds": time.monotonic() - started,
                 })
@@ -354,6 +374,8 @@ def run_experiment(
             event = {
                 "round": step,
                 "request": request,
+                "request_bytes": len(wire),
+                "request_sha256": hashlib.sha256(wire).hexdigest(),
                 "response_patch": patch,
                 "outcome": outcome,
                 "post_patch_probes": [
@@ -364,10 +386,20 @@ def run_experiment(
                 "elapsed_seconds": time.monotonic() - started,
             }
             _append_event(log, event)
+            kinds: dict[str, int] = {}
+            for op in patch["ops"]:
+                kinds[op["kind"]] = kinds.get(op["kind"], 0) + 1
             history.append({
-                "round": step, "patch": patch, "outcome": outcome,
+                "round": step,
+                "model_hash_before": outcome["before_hash"],
+                "model_hash_after": outcome["after_hash"],
+                "patch_sha256": hashlib.sha256(canonical_bytes(patch)).hexdigest(),
+                "patch_reason": patch["reason"],
+                "operation_kinds": kinds,
+                "operations": outcome["operations"],
+                "edited_cells": outcome["edited_cells"],
+                "changed_parameters": outcome["changed_parameters"],
                 "teacher_feedback_disclosed": feedback,
-                "post_patch_probes": event["post_patch_probes"],
             })
         predictions = _predict(session, records)
         mae = sum(

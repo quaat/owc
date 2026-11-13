@@ -1,5 +1,6 @@
 """Development-only experimental protocol invariants."""
 
+import hashlib
 import json
 import math
 import sys
@@ -8,6 +9,8 @@ from pathlib import Path
 import chess
 import pytest
 
+from owc.experiments import runner
+from owc.experiments.request_wire import MAX_REQUEST_BYTES, canonical_bytes
 from owc.experiments.runner import (
     CommandAgent,
     ExperimentSettings,
@@ -94,6 +97,71 @@ def test_e5_budget_and_feedback_visible_after_initial_patch(tmp_path: Path) -> N
     assert all(len(req["teacher_feedback"]) == 2 for req in agent.requests[1:])
     assert len(agent.requests[2]["previous_rounds"][-1]["teacher_feedback_disclosed"]) == 2
     assert agent.requests[1]["nonzero_state"]["total_nonzero"] == 1
+
+
+def test_large_rank_one_feedback_history_stays_within_wire_limit(tmp_path: Path) -> None:
+    labels = dev_fixture(tmp_path)
+
+    class LargePatchAgent(FixtureAgent):
+        def __init__(self) -> None:
+            self.requests = []
+
+        def propose(self, request: dict, timeout_seconds: float) -> dict:
+            self.requests.append(json.loads(canonical_bytes(request)))
+            right = [round(0.001 + col * 0.00000001, 11) for col in range(781)]
+            operation = {
+                "kind": "rank_one_add", "tensor": "layers.0.weight",
+                "rows": [request["round"]], "cols": list(range(781)),
+                "left": [1.0], "right": right, "scale": 1.0,
+            }
+            return {
+                "schema_version": "owc.weightpatch.v1",
+                "expected_model_hash": request["model_hash"],
+                "actor": self.identity, "reason": "Large legal material feature edit",
+                "ops": [dict(operation) for _ in range(12)],
+            }
+
+    agent = LargePatchAgent()
+    run = run_experiment(
+        labels=labels, output_dir=tmp_path / "large", agent=agent,
+        settings=ExperimentSettings(feedback_rounds=5, probe_count=2,
+                                    max_label_disclosures=10, max_seconds=120),
+    )
+    event_lines = (tmp_path / "large" / "events.jsonl").read_text().splitlines()
+    events = [json.loads(line) for line in event_lines]
+    assert run["status"] == "completed"
+    assert len(agent.requests) == len(events) == 6
+    assert len(canonical_bytes(events[0]["response_patch"])) > 100_000
+    assert all(len(canonical_bytes(request)) <= MAX_REQUEST_BYTES - 4096
+               for request in agent.requests)
+    assert all(event["request_bytes"] == len(canonical_bytes(request))
+               for event, request in zip(events, agent.requests, strict=True))
+    assert all("patch" not in item for request in agent.requests[1:]
+               for item in request["previous_rounds"])
+    assert agent.requests[2]["previous_rounds"][-1]["patch_sha256"] == hashlib.sha256(
+        canonical_bytes(events[1]["response_patch"])
+    ).hexdigest()
+    assert agent.requests[2]["previous_rounds"][-1]["model_hash_after"] == (
+        events[1]["outcome"]["after_hash"]
+    )
+    assert all(event["response_patch"]["ops"] for event in events)
+    assert "teacher_target" not in json.dumps(agent.requests[0])
+
+
+def test_oversized_complete_request_fails_before_agent_call(tmp_path: Path, monkeypatch) -> None:
+    labels = dev_fixture(tmp_path)
+    agent = CaptureAgent()
+    monkeypatch.setattr(runner, "AGENT_CONTEXT", {"oversized": "x" * MAX_REQUEST_BYTES})
+    with pytest.raises(runner.RequestSizeError, match="request is"):
+        run_experiment(labels=labels, output_dir=tmp_path / "oversized",
+                       agent=agent, settings=ExperimentSettings())
+    assert agent.requests == []
+    manifest = json.loads((tmp_path / "oversized" / "manifest.json").read_text())
+    event = json.loads((tmp_path / "oversized" / "events.jsonl").read_text())
+    assert manifest["status"] == "failed"
+    assert manifest["exception_type"] == event["error_type"] == "RequestSizeError"
+    assert event["response_patch"] is None
+    assert event["model_hash_after"] == event["request"]["model_hash"]
 
 
 def test_invalid_budget_refuses_to_create_run(tmp_path: Path) -> None:

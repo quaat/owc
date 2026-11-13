@@ -1,6 +1,8 @@
 """Offline contract checks: CI never calls a billable model."""
 
+import hashlib
 import json
+import stat
 
 import pytest
 
@@ -50,10 +52,89 @@ def test_foundry_adapter_emits_only_patch_and_saves_usage(monkeypatch, tmp_path,
     captured = capsys.readouterr()
     assert json.loads(captured.out) == patch
     assert captured.err == ""
-    saved = json.loads(next(tmp_path.glob("*.json")).read_text())
-    assert saved["response_id"] == "resp_fixture"
+    restricted_path = next(tmp_path.glob("*.restricted.json"))
+    public_path = next(tmp_path.glob("*.public.json"))
+    saved = json.loads(restricted_path.read_text())
+    public = json.loads(public_path.read_text())
+    assert saved["response_id"] == public["response_id"] == "resp_fixture"
     assert saved["usage"]["input_tokens"] == 100
+    assert saved["provider_response_raw_b64"]
+    assert saved["provider_request_raw_b64"]
+    assert saved["instructions_sha256"] == hashlib.sha256(
+        astra_adapter.SYSTEM_INSTRUCTIONS.encode()
+    ).hexdigest()
+    assert saved["adapter_source_sha256"] == hashlib.sha256(
+        astra_adapter.Path(astra_adapter.__file__).read_bytes()
+    ).hexdigest()
+    assert public["provider_response_sha256"] == hashlib.sha256(
+        json.dumps(provider_response).encode()
+    ).hexdigest()
+    assert public["restricted_transcript_sha256"] == hashlib.sha256(
+        restricted_path.read_bytes()
+    ).hexdigest()
+    assert stat.S_IMODE(restricted_path.stat().st_mode) == 0o600
+    assert stat.S_IMODE(public_path.stat().st_mode) == 0o600
     assert "fixture-secret" not in json.dumps(saved)
+    assert "example.invalid" not in json.dumps(public)
+    assert "agent_request" not in public
+
+    provider_response["model"] = "underlying-astra"
+    assert astra_adapter.main() == 1
+    assert "no explicit allowed mapping" in next(
+        json.loads(path.read_text()).get("error", "") for path in
+        tmp_path.glob("*.restricted.json") if "error" in json.loads(path.read_text())
+    )
+    monkeypatch.setenv("OWC_ASTRA_ALLOWED_RESPONSE_MODEL", "underlying-astra")
+    assert astra_adapter.main() == 0
+    assert any(json.loads(path.read_text()).get("response_model_policy") ==
+               "operator_allowed_mapping" for path in tmp_path.glob("*.public.json"))
+    provider_response["id"] = "https://internal.example/secret"
+    assert astra_adapter.main() == 0
+    assert any(json.loads(path.read_text()).get("response_id") is None
+               for path in tmp_path.glob("*.public.json"))
+    provider_response["model"] = None
+    monkeypatch.delenv("OWC_ASTRA_ALLOWED_RESPONSE_MODEL")
+    assert astra_adapter.main() == 1
+    provider_response["model"] = "gpt-6-astra"
+    provider_response["id"] = "resp_fixture"
+    capsys.readouterr()
+    monkeypatch.setattr(astra_adapter, "_diagnostic", lambda *_: (_ for _ in ()).throw(
+        PermissionError("simulated storage failure")
+    ))
+    assert astra_adapter.main() == 1
+    assert capsys.readouterr().out == ""
+
+
+def test_diagnostics_directory_must_be_private(monkeypatch, tmp_path, capsys):
+    public_dir = tmp_path / "public"
+    public_dir.mkdir(mode=0o755)
+    public_dir.chmod(0o755)
+    monkeypatch.setenv("OWC_ASTRA_DIAGNOSTICS_DIR", str(public_dir))
+    assert astra_adapter.main() == 1
+    assert capsys.readouterr().out == ""
+    assert list(public_dir.iterdir()) == []
+
+
+def test_provider_timeout_is_recorded_without_patch(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(astra_adapter, "_read_request", lambda: {
+        "protocol": "owc.agent-run.v1", "model_hash": "a" * 64,
+        "round": 0, "teacher_feedback": [],
+    })
+    monkeypatch.setenv("OWC_ASTRA_ENDPOINT", "https://example.invalid/openai/v1")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "fixture-secret")
+    monkeypatch.setenv("OWC_ASTRA_DIAGNOSTICS_DIR", str(tmp_path))
+
+    def timeout(*_args, **_kwargs):
+        raise TimeoutError("fixture timeout")
+
+    monkeypatch.setattr(astra_adapter.urllib.request, "urlopen", timeout)
+    assert astra_adapter.main() == 1
+    assert capsys.readouterr().out == ""
+    public = json.loads(next(tmp_path.glob("*.public.json")).read_text())
+    assert public["status"] == "failed"
+    assert public["error_type"] == "TimeoutError"
+    assert public["failure_reason_code"] == "provider_timeout"
+    assert public["provider_response_sha256"] is None
 
 
 def test_patch_identity_mismatch_is_rejected():

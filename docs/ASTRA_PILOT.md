@@ -10,7 +10,22 @@ Codex session or a self-declared actor string is not connection evidence.
 Set `OWC_ASTRA_ENDPOINT` to the approved HTTPS inference base URL ending in
 `/openai/v1`, `OWC_ASTRA_DEPLOYMENT` to the actual deployment, and
 `OWC_ASTRA_ACTOR` to an identity such as `foundry:gpt-6-astra`. Set
-`OWC_ASTRA_DIAGNOSTICS_DIR` to an ignored, writable artifact directory.
+`OWC_ASTRA_DIAGNOSTICS_DIR` to a dedicated, ignored directory owned by the
+adapter process with mode 0700. It is required for a real call. The adapter
+creates transcript and attestation files with mode 0600, refusing a
+group/world-accessible directory. The transcript includes the exact provider
+request and response bytes in base64, development positions, the internal
+endpoint, hashes, IDs and usage; keep it under restricted access and never
+commit it. The paired `.public.json` attestation omits positions and endpoint
+but must still be reviewed before publication. A failed diagnostic write
+causes the adapter to exit without emitting a patch, including after a
+provider response.
+
+The reported model must equal `OWC_ASTRA_DEPLOYMENT`. If Foundry reports an
+underlying model identifier for a deployment alias, set
+`OWC_ASTRA_ALLOWED_RESPONSE_MODEL` to that **one explicitly verified value**.
+The restricted transcript records both names and the policy used. This
+operator mapping is not independent proof of the provider's model identity.
 The adapter reads one `owc.agent-run.v1` JSON request from stdin and writes
 one `owc.weightpatch.v1` JSON object to stdout. It requests JSON object
 format from Responses, records the provider response ID, model, request ID
@@ -21,10 +36,16 @@ write a rejection event.
 
 The model receives the 781-feature contract, tensor shapes and indexing,
 current nonzero weights (at most 512 cells), the current hash, blind probes,
-and at most five preceding rounds. Prior teacher feedback appears only after
-its budgeted disclosure. Full development MAE after each patch is saved in
-events but is not disclosed to the agent. A zero model needs connected paths
-through all three linear layers to become position-sensitive.
+and up to five compact preceding-round summaries. The complete UTF-8 request
+has a 256,000-byte adapter limit and 4,096 bytes reserved as headroom. Oldest
+summaries are omitted if needed; full patches remain in the local event log.
+If even the reduced request is too large, the runner records `RequestSizeError`
+before invoking the agent. Prior teacher feedback appears only after its
+budgeted disclosure. Full development MAE after each patch is saved in
+orchestration events, where the operator can inspect it, but is not disclosed
+to the editing agent and is not an independent blind-test metric. A zero
+model needs connected paths through all three linear layers to become
+position-sensitive.
 
 `CommandAgent` executes with the operator's OS permissions. Keep all sealed
 test positions and labels under another OS account or a genuinely isolated
