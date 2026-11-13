@@ -3,6 +3,8 @@
 This directory contains the living, independently reviewed article draft for
 [Open Weight Chess](https://github.com/quaat/owc).
 
+- [Proposed comparative study](STUDY_DESIGN.md): prospective gates, sampling,
+  fairness, blinding, budgets and publication criteria (**not preregistered**).
 - [Preliminary manuscript](OWC_MANUSCRIPT.md): experimental protocol, first
   integration attempt, measured smoke results, limitations and verified
   references.
