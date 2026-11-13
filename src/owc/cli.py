@@ -11,6 +11,7 @@ from owc.board.encoding import ENCODING_VERSION, encode_board, parse_legal_fen
 from owc.dataset.cli import add_dataset_parser, run_dataset
 from owc.models.raw_mlp import RawMLP
 from owc.oracle.cli import add_oracle_parser, run_oracle
+from owc.weightspace.cli import add_weights_parser, run_weights
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -25,12 +26,20 @@ def build_parser() -> argparse.ArgumentParser:
     inspect.add_argument("--json", action="store_true", help="machine-readable output")
     add_oracle_parser(commands)
     add_dataset_parser(commands)
+    add_weights_parser(commands)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    if args.command == "weights":
+        try:
+            run_weights(args)
+        except (ValueError, FileNotFoundError, FileExistsError, RuntimeError) as error:
+            parser.error(str(error))
+        return 0
 
     if args.command == "dataset":
         try:

@@ -108,6 +108,75 @@ results. For scientifically useful experiments, replace random synthetic
 games with licensed, representative human/engine game data, including
 endgame and tactical position sources.
 
+## M2: Auditable direct weight editing
+
+Weights are **not trained** by this interface. M2 accepts a restricted JSON
+schema with checked tensor names, scalar indices, finite numeric values and
+structured rank-one additions. It rejects unknown operations and mismatched
+model hashes without changing the current checkpoint.
+
+Start a separate local experiment session (use a directory under ignored
+runs/, or an external writable directory):
+
+```bash
+owc weights init --session runs/demo
+owc weights inspect --session runs/demo --tensor layers.4.bias
+owc weights checkpoint --session runs/demo --name baseline
+```
+
+Construct a patch bound to the current model hash:
+
+```bash
+python - <<'PY'
+import json
+from owc.weightspace.session import WeightSession
+from owc.weightspace.patches import PATCH_SCHEMA
+session = WeightSession("runs/demo")
+patch = {
+    "schema_version": PATCH_SCHEMA,
+    "expected_model_hash": session.inspect()["model_hash"],
+    "actor": "operator",
+    "reason": "Demonstrate a deliberate scalar weight change",
+    "ops": [{"kind": "set", "tensor": "layers.4.bias", "index": [0], "value": 0.25}],
+}
+with open("runs/demo.patch.json", "w", encoding="utf-8") as f:
+    json.dump(patch, f)
+PY
+owc weights apply --session runs/demo --patch runs/demo.patch.json
+owc weights probe --session runs/demo --fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+owc weights rollback --session runs/demo --name baseline
+```
+
+The demonstration edits the final output bias, giving a new static network
+score of approximately tanh(0.25). This is **not evidence of stronger chess
+evaluation**: it simply proves a controlled weight change affects inference.
+
+Each accepted edit creates an immutable revision with a complete patch,
+before/after model hashes, a SHA256 of its stored float32 tensors, actor and
+reason. A named checkpoint is a persistent reference to an immutable revision;
+rollback creates a **new revision** with the exact restored parameters.
+Failed edits do not alter the current revision. Checkpoints use NumPy archives
+loaded with pickle disabled; patches never execute supplied Python code.
+Revisions are immutable **through the application API**; they are not
+cryptographically signed or tamper-proof against an actor with filesystem
+write access. The actor name in a patch is self-declared until M3 adds
+independent run provenance.
+
+Supported edit kinds:
+
+- scalar set: {"kind":"set","tensor":"layers.4.bias","index":[0],"value":0.25}
+- scalar addition: {"kind":"add","tensor":"layers.0.weight","index":[0,12],"value":0.1}
+- rank-one matrix addition: {"kind":"rank_one_add","tensor":"layers.0.weight",
+  "rows":[0],"cols":[12,13],"left":[1],"right":[2,-1],"scale":0.1}
+
+All tensor indices must be within bounds and each patch contains at most
+128 operations and 10,000 addressed scalar cells. Checkpoint writes use a
+single-writer lock file. A crash can leave a stale .write.lock which needs
+manual operator inspection and removal before further edits.
+
+Use a separate process/OS account for held-out testing; filesystem path
+separation alone does **not** guarantee an editing agent cannot see test data.
+
 ## Developer checks
 
 ```bash
@@ -138,7 +207,8 @@ exact input semantics must be versioned when changed.
 
 - `python-chess` supplies legal move generation, position validation, and
   outcome detection; the neural network only computes a **static score**.
-- The M1 Stockfish oracle is available; datasets, agent patcher, supervised training,
-  independent search and UCI server remain future milestones.
+- The M1 Stockfish oracle and dataset generation are available, and M2 adds
+  direct weight-editing sessions. Autonomous agent experiments, supervised
+  training, independent search and UCI remain future milestones.
 - Stockfish-derived labels and benchmark results must keep strict test-set
   isolation and explicit engine/version/settings provenance.
