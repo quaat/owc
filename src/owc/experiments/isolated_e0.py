@@ -20,6 +20,9 @@ from owc.experiments.astra_adapter import SYSTEM_INSTRUCTIONS
 from owc.experiments.runner import CommandAgent, ExperimentSettings, run_experiment
 
 SANDBOX_DIAGNOSTICS = "/mnt/runs/diagnostics"
+# The E0 cost preflight uses a smaller provider-wire cap than general M3
+# feedback runs. This is a byte cap, not a live billing enforcement mechanism.
+MAX_E0_PROVIDER_REQUEST_BYTES = 32_000
 PROBE = """import json, os, urllib.error, urllib.request
 from urllib.parse import urlparse
 heldout = os.environ["OWC_HELDOUT_DENY_PATH"]
@@ -86,7 +89,7 @@ def restricted_environment(*, endpoint: str, diagnostics: Path,
     key = os.environ.get("AZURE_OPENAI_API_KEY")
     if not key:
         raise ValueError("AZURE_OPENAI_API_KEY is required")
-    if not 256 <= max_tokens <= 4000:
+    if not 256 <= max_tokens <= 3000:
         raise ValueError("This E0 gate limits output to 256..4000 tokens")
     if not 1 <= timeout <= 120:
         raise ValueError("This E0 gate limits provider timeout to 1..120 seconds")
@@ -98,6 +101,7 @@ def restricted_environment(*, endpoint: str, diagnostics: Path,
         "OWC_ASTRA_ACTOR": os.environ.get("OWC_ASTRA_ACTOR", "foundry:gpt-6-astra"),
         "OWC_ASTRA_DIAGNOSTICS_DIR": SANDBOX_DIAGNOSTICS,
         "OWC_ASTRA_MAX_OUTPUT_TOKENS": str(max_tokens),
+        "OWC_ASTRA_MAX_PROVIDER_REQUEST_BYTES": str(MAX_E0_PROVIDER_REQUEST_BYTES),
         "OWC_ASTRA_TIMEOUT_SECONDS": str(timeout),
         "OWC_HELDOUT_DENY_PATH": str(heldout),
     }
@@ -146,9 +150,14 @@ def prepare(*, root: Path, diagnostics: Path, heldout: Path,
         ).hexdigest(),
         "launcher_source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "max_output_tokens": max_tokens, "provider_timeout_seconds": timeout,
+        "provider_request_max_bytes": MAX_E0_PROVIDER_REQUEST_BYTES,
         "request_max_bytes": 256_000, "request_headroom_bytes": 4_096,
         "dollar_cost_ceiling": None,
-        "dollar_cost_note": "Deployment price unavailable; one call and token caps bound exposure",
+        "dollar_cost_note": (
+            "Published Azure standard rates allow a conditional estimate, but the "
+            "actual billing SKU must be verified before a paid E0 call. This byte "
+            "limit is not a hard monetary spending control."
+        ),
     }
     _private_json(diagnostics / "preparation.json", preparation)
     return prefix, env, preparation

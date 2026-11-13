@@ -168,6 +168,8 @@ def _diagnostic(directory: Path, data: dict) -> None:
         "agent_request_sha256": data.get("agent_request_sha256"),
         "provider_request_sha256": data.get("provider_request_sha256"),
         "provider_response_sha256": data.get("provider_response_sha256"),
+        "provider_request_bytes": data.get("provider_request_bytes"),
+        "provider_request_byte_cap": data.get("provider_request_byte_cap"),
         "instructions_sha256": data.get("instructions_sha256"),
         "adapter_source_sha256": data.get("adapter_source_sha256"),
         "preflight_sha256": data.get("preflight_sha256"),
@@ -186,7 +188,7 @@ def _persist_preflight(directory: Path, diagnostic: dict) -> str:
             "adapter_version", "endpoint", "deployment_requested", "actor",
             "parameters", "agent_request_sha256", "instructions_sha256",
             "adapter_source_sha256", "provider_request_sha256",
-            "provider_request_raw_b64",
+            "provider_request_bytes", "provider_request_raw_b64",
         )
     }
     preflight["status"] = "prepared_before_provider_call"
@@ -231,6 +233,17 @@ def main() -> int:
             "agent_request": request,
         })
         wire = canonical_bytes(payload)
+        diagnostic["provider_request_bytes"] = len(wire)
+        wire_cap = os.environ.get("OWC_ASTRA_MAX_PROVIDER_REQUEST_BYTES")
+        if wire_cap is not None:
+            limit = int(wire_cap)
+            if not 4096 <= limit <= MAX_REQUEST_BYTES:
+                raise ValueError("Provider request byte cap must be within [4096,256000]")
+            diagnostic["provider_request_byte_cap"] = limit
+            if len(wire) > limit:
+                raise ValueError(
+                    f"Provider request exceeds declared byte cap: {len(wire)} > {limit}"
+                )
         diagnostic["provider_request_sha256"] = hashlib.sha256(wire).hexdigest()
         diagnostic["provider_request_raw_b64"] = base64.b64encode(wire).decode()
         diagnostic["preflight_sha256"] = _persist_preflight(directory, diagnostic)

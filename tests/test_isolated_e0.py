@@ -38,6 +38,7 @@ def test_restricted_environment_forwards_only_required_credentials(monkeypatch, 
     assert env["AZURE_OPENAI_API_KEY"] == "fixture-key"
     assert env["OWC_ASTRA_DIAGNOSTICS_DIR"] == "/mnt/runs/diagnostics"
     assert env["OWC_ASTRA_MAX_OUTPUT_TOKENS"] == "3000"
+    assert env["OWC_ASTRA_MAX_PROVIDER_REQUEST_BYTES"] == "32000"
     assert "GH_TOKEN" not in env
     assert "OWC_ASTRA_ENDPOINT" in env
     assert "PYTHONPATH" not in env  # bubblewrap sets the mounted source path

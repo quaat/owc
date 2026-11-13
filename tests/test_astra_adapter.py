@@ -165,3 +165,39 @@ def test_nonfinite_edit_is_rejected_before_stdout():
     }]}]}
     with pytest.raises(ValueError, match="finite"):
         astra_adapter._extract_patch(response, "a" * 64, "foundry:gpt-6-astra")
+
+def test_provider_wire_cost_cap_rejects_before_network(monkeypatch, tmp_path, capsys):
+    request = {"protocol": "owc.agent-run.v1", "model_hash": "a" * 64,
+               "round": 0, "teacher_feedback": [], "padding": "x" * 7000}
+    calls = []
+
+    def fail_network(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise AssertionError("Provider must not be called when byte budget is exceeded")
+
+    monkeypatch.setattr(astra_adapter, "_read_request", lambda: request)
+    monkeypatch.setattr(astra_adapter.urllib.request, "urlopen", fail_network)
+    monkeypatch.setenv("OWC_ASTRA_ENDPOINT", "https://example.invalid/openai/v1")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "fixture-secret")
+    monkeypatch.setenv("OWC_ASTRA_DIAGNOSTICS_DIR", str(tmp_path))
+    monkeypatch.setenv("OWC_ASTRA_MAX_PROVIDER_REQUEST_BYTES", "4096")
+
+    assert astra_adapter.main() == 1
+    assert capsys.readouterr().out == ""
+    assert calls == []
+    summary = json.loads(next(tmp_path.glob("*.public.json")).read_text())
+    assert summary["status"] == "failed"
+    assert summary["provider_request_bytes"] > summary["provider_request_byte_cap"]
+    assert "example.invalid" not in json.dumps(summary)
+
+def test_provider_wire_cap_must_be_valid(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(astra_adapter, "_read_request", lambda: {
+        "protocol": "owc.agent-run.v1", "model_hash": "a" * 64,
+        "round": 0, "teacher_feedback": [],
+    })
+    monkeypatch.setenv("OWC_ASTRA_ENDPOINT", "https://example.invalid/openai/v1")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "fixture-secret")
+    monkeypatch.setenv("OWC_ASTRA_DIAGNOSTICS_DIR", str(tmp_path))
+    monkeypatch.setenv("OWC_ASTRA_MAX_PROVIDER_REQUEST_BYTES", "999999")
+    assert astra_adapter.main() == 1
+    assert capsys.readouterr().out == ""
