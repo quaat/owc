@@ -205,3 +205,33 @@ def test_cli_rejects_invalid_patch_without_revision(
     assert error.value.code == 2
     assert session.head() == initial_revision
     assert "does not change" in capsys.readouterr().err
+
+
+def test_direct_patch_can_build_a_position_sensitive_circuit() -> None:
+    """Six explicit parameter edits detect a white pawn square vs a black one."""
+    from owc.board.encoding import encode_board, parse_legal_fen
+
+    model = RawMLP()
+    white_pawn_e2 = chess.E2
+    black_pawn_e7 = 6 * 64 + chess.E7
+    operations = [
+        {"kind": "set", "tensor": "layers.0.weight", "index": [0, white_pawn_e2],
+         "value": 1.0},
+        {"kind": "set", "tensor": "layers.0.weight", "index": [1, black_pawn_e7],
+         "value": 1.0},
+        {"kind": "set", "tensor": "layers.2.weight", "index": [0, 0], "value": 1.0},
+        {"kind": "set", "tensor": "layers.2.weight", "index": [1, 1], "value": 1.0},
+        {"kind": "set", "tensor": "layers.4.weight", "index": [0, 0], "value": 1.0},
+        {"kind": "set", "tensor": "layers.4.weight", "index": [0, 1], "value": -1.0},
+    ]
+    report = apply_patch(model, _patch(model_hash(model), operations))
+    assert report["edited_cells"] == 6
+
+    starting = parse_legal_fen(chess.STARTING_FEN)
+    after_e4 = starting.copy()
+    after_e4.push_san("e4")
+    with torch.inference_mode():
+        start_score = float(model(encode_board(starting)).item())
+        after_score = float(model(encode_board(after_e4)).item())
+    assert start_score == 0.0
+    assert after_score == pytest.approx(-math.tanh(1.0))

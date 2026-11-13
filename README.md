@@ -157,6 +157,10 @@ reason. A named checkpoint is a persistent reference to an immutable revision;
 rollback creates a **new revision** with the exact restored parameters.
 Failed edits do not alter the current revision. Checkpoints use NumPy archives
 loaded with pickle disabled; patches never execute supplied Python code.
+Revisions are immutable **through the application API**; they are not
+cryptographically signed or tamper-proof against an actor with filesystem
+write access. The actor name in a patch is self-declared until M3 adds
+independent run provenance.
 
 Supported edit kinds:
 
@@ -203,7 +207,8 @@ exact input semantics must be versioned when changed.
 
 - `python-chess` supplies legal move generation, position validation, and
   outcome detection; the neural network only computes a **static score**.
-- The M1 Stockfish oracle is available; datasets, supervised training,
-  independent search and UCI server remain future milestones.
+- The M1 Stockfish oracle and dataset generation are available, and M2 adds
+  direct weight-editing sessions. Autonomous agent experiments, supervised
+  training, independent search and UCI remain future milestones.
 - Stockfish-derived labels and benchmark results must keep strict test-set
   isolation and explicit engine/version/settings provenance.
