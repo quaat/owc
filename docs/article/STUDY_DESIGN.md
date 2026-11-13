@@ -54,7 +54,7 @@ Candidate source: [Lichess Open Database](https://database.lichess.org/) **stand
 
 ## Teacher budget and fairness
 
-Teacher target: \(\tanh(\mathrm{cp}_{stm}/400)\), mate cases mapped to explicit bounds, preserving raw cp/mate, engine options and PV when available. Report positions evaluated, actual node count, requests and wall time for **upstream label creation**, even when the agent later consumes only precomputed feedback.
+Teacher target: $\tanh(\mathrm{cp}_{stm}/400)$, mate cases mapped to explicit bounds, preserving raw cp/mate, engine options and PV when available. Report positions evaluated, actual node count, requests and wall time for **upstream label creation**, even when the agent later consumes only precomputed feedback.
 
 There are at least two meaningful fairness comparisons, which should be presented separately:
 

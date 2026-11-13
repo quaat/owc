@@ -36,11 +36,11 @@ H2 requires more than a reduction in an agent-visible development metric. The ag
 
 The primary evaluator is a floating-point multilayer perceptron:
 
-\[
+$
 781 \rightarrow 32 \;(\mathrm{ReLU}) \rightarrow 16 \;(\mathrm{ReLU}) \rightarrow 1 \;(\tanh).
-\]
+$
 
-It contains **25,569 trainable parameters**, including biases. Its feature representation, versioned as \`owc.raw781.v1\`, consists of twelve 64-square piece planes (768 features), a side-to-move indicator, four castling-right indicators and eight legal en-passant file indicators. Inputs use fixed board coordinates. The output lies in \([-1,1]\), with positive values denoting an advantage for the side to move.
+It contains **25,569 trainable parameters**, including biases. Its feature representation, versioned as \`owc.raw781.v1\`, consists of twelve 64-square piece planes (768 features), a side-to-move indicator, four castling-right indicators and eight legal en-passant file indicators. Inputs use fixed board coordinates. The output lies in $[-1,1]$, with positive values denoting an advantage for the side to move.
 
 For the direct-edit condition, every parameter starts at exactly zero. This is a strong and revealing restriction: with zero weights through all layers, the network has no active path from a piece-square input to the output. An agent that modifies only the last-layer bias can change the score without evaluating chess. A meaningful program must deliberately create nonzero paths across the three linear layers. The baseline trained by gradient descent instead uses seeded nonzero initialization, since keeping all hidden weights at zero would not be a fair way to train a ReLU network by Adam.
 
@@ -56,11 +56,11 @@ The audit records changes and failures, permitting replay of the exact edits app
 
 Stockfish returns evaluations and search metadata under declared node budgets. The primary continuous target in the first OWC smoke trial was
 
-\[
+$
 y(s) = \tanh\left(\frac{\mathrm{cp}_{\mathrm{stm}}(s)}{400}\right),
-\]
+$
 
-where \(\mathrm{cp}_{\mathrm{stm}}\) is the engine's centipawn assessment from the side-to-move perspective; mate scores map to signed terminal bounds. This transformation makes target values compatible with the network's tanh output. It does not turn centipawn scores into calibrated winning probabilities.
+where $\mathrm{cp}_{\mathrm{stm}}$ is the engine's centipawn assessment from the side-to-move perspective; mate scores map to signed terminal bounds. This transformation makes target values compatible with the network's tanh output. It does not turn centipawn scores into calibrated winning probabilities.
 
 The dataset and score manifests include the engine build, binary checksum, analysis options, node budget, source hashes and source-game grouping. Determinism here means that configuration and artifacts are documented. It does **not** guarantee identical search results on all software builds and hardware.
 
