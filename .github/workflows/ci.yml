@@ -43,5 +43,13 @@ jobs:
           STOCKFISH_PATH=/usr/games/stockfish python -m owc oracle batch --input "$ROOT/one.fen" --output "$ROOT/one.labels.jsonl" --nodes 128
           test -s "$ROOT/one.labels.jsonl"
           test -s "$ROOT/one.labels.jsonl.manifest.json"
+      - name: Weight programming smoke
+        run: |
+          ROOT="$(mktemp -d)"
+          python -m owc weights init --session "$ROOT/session"
+          python -m owc weights checkpoint --session "$ROOT/session" --name baseline
+          python -m owc weights inspect --session "$ROOT/session" --tensor layers.4.bias
+          python -m owc weights probe --session "$ROOT/session" --fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+          python -m owc weights rollback --session "$ROOT/session" --name baseline
       - name: CLI smoke
         run: python -m owc inspect --json

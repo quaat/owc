@@ -17,25 +17,21 @@ Develop a reproducible, CPU-first chess neural evaluator research harness that c
 9. Do not commit secrets, large datasets, binary engine executables, or unlicensed resources.
 10. Do not merge automatically or close milestone work before acceptance gates pass. Explicitly flag hardware/Stockfish dependencies unavailable to CI.
 
-## Current status and next Codex task
+## Current M2 status and next task
 
-- M0 (#1): first runnable laboratory passed CI, implementation PR #10 was merged into the planning branch.
-- The foundation planning PR #9 must be merged into `main` before the following stacked PRs are retargeted.
-- M1 oracle (#2) lives in PR #11, based on the planning branch.
-- M1 dataset (#3) lives in PR #12, based on the oracle branch.
-- Do **not** present those PRs as merged to `main` until GitHub confirms this.
+- M0 implementation PR #10 and foundation PR #9 have been merged.
+- M1 oracle PR #11 was merged into its parent branch.
+- M1 dataset PR #12 was merged into its parent branch. Confirm that all M1
+  commits are propagated to `main` before opening independent branches.
+- M2 issue #4 implements **restricted JSON tensor patching**, immutable revisions,
+  named checkpoints, exact rollback and probing.
 
-**Next task after the M1 review gates pass:** implement M2 issue #4
-(auditable weight programming) in a fresh branch from the then-current `main`.
-Build `inspect_weights`, `apply_patch`, `probe`, checkpoint, and exact
-rollback, with validated sparse/low-rank/structured tensor edits. Every edit
-requires before/after hashes and tests demonstrating changed behavior.
-Keep agent edits separate from gradient-based baseline training; do not start
-Stockfish feedback experiments until patch audit and held-out access controls
-have passed review.
-
-If M1 is not yet merged, prioritize review feedback, fixes and CI evidence
-on PRs #9, #11 and #12 before beginning M2.
+Review/merge the M2 PR only after CI passes and the previous branch stacking
+is resolved. **After M2 is merged**, proceed to M3 issue #5 (agent feedback
+experiments) and #6 (supervised baseline). Keep weight-programmed edits distinct
+from gradient descent. Never run hidden-test evaluations within the editing
+agent's accessible process, and always record the actual model identity rather
+than assuming Astra access.
 
 ## PR handoff format
 Summary; linked issue; behavior demonstrated; tests and exact commands; artifacts/metrics; assumptions; known risks; next issue.
