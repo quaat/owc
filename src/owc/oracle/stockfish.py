@@ -11,7 +11,7 @@ import os
 import shutil
 import tempfile
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
@@ -215,7 +215,7 @@ def label_fen_file(oracle: StockfishOracle, input_path: Path, output_path: Path)
 
         manifest = {
             "schema_version": LABEL_VERSION,
-            "created_at_utc": datetime.now(timezone.utc).isoformat(),
+            "created_at_utc": datetime.now(UTC).isoformat(),
             "source": source.name,
             "source_sha256": sha256_file(source),
             "records": count,

@@ -80,7 +80,8 @@ def test_invalid_settings_and_terminal_rejected(
 
 def test_missing_wdl_fails_clearly(fake_stockfish: tuple[Path, FakeEngine]) -> None:
     binary, _ = fake_stockfish
-    with StockfishOracle(OracleSettings(str(binary), nodes=123, target="wdl_expectation")) as oracle:
+    settings = OracleSettings(str(binary), nodes=123, target="wdl_expectation")
+    with StockfishOracle(settings) as oracle:
         with pytest.raises(ValueError, match="WDL"):
             oracle.score(chess.STARTING_FEN)
 
