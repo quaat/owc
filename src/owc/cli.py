@@ -9,6 +9,7 @@ import torch
 
 from owc.board.encoding import ENCODING_VERSION, encode_board, parse_legal_fen
 from owc.models.raw_mlp import RawMLP
+from owc.oracle.cli import add_oracle_parser, run_oracle
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -21,12 +22,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="full legal six-field FEN (defaults to standard starting position)",
     )
     inspect.add_argument("--json", action="store_true", help="machine-readable output")
+    add_oracle_parser(commands)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    if args.command == "oracle":
+        try:
+            run_oracle(args)
+        except (ValueError, FileNotFoundError, FileExistsError) as error:
+            parser.error(str(error))
+        return 0
 
     if args.command == "inspect":
         try:
