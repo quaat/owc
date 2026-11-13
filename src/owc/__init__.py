@@ -1,0 +1,3 @@
+"""Open Weight Chess research laboratory."""
+
+__version__ = "0.1.0"
