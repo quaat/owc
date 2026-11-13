@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  m0:
+  m1:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -25,5 +25,23 @@ jobs:
         run: ruff check .
       - name: Test
         run: pytest -q
+      - name: Install Stockfish reference engine
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq stockfish
+      - name: Stockfish oracle smoke
+        run: |
+          STOCKFISH_PATH=/usr/games/stockfish python -m owc oracle score --fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" --nodes 256 --json
+      - name: Dataset generation smoke
+        run: |
+          ROOT="$(mktemp -d)"
+          python -m owc dataset build --synthetic-games 10 --seed 42 --min-ply 4 --stride 2 --max-plies 12 --dev-dir "$ROOT/dev" --heldout-dir "$ROOT/heldout"
+          test -f "$ROOT/dev/train.fen"
+          test -f "$ROOT/heldout/test.fen"
+          head -n 1 "$ROOT/dev/train.fen" > "$ROOT/one.fen"
+          test -s "$ROOT/one.fen"
+          STOCKFISH_PATH=/usr/games/stockfish python -m owc oracle batch --input "$ROOT/one.fen" --output "$ROOT/one.labels.jsonl" --nodes 128
+          test -s "$ROOT/one.labels.jsonl"
+          test -s "$ROOT/one.labels.jsonl.manifest.json"
       - name: CLI smoke
         run: python -m owc inspect --json

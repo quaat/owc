@@ -17,8 +17,25 @@ Develop a reproducible, CPU-first chess neural evaluator research harness that c
 9. Do not commit secrets, large datasets, binary engine executables, or unlicensed resources.
 10. Do not merge automatically or close milestone work before acceptance gates pass. Explicitly flag hardware/Stockfish dependencies unavailable to CI.
 
-## First task for Codex
-Implement the M0 issue: basic installable Python project, README, versioned raw-board FEN encoder, 781->32->16->1 zero-initialized CPU MLP, `owc inspect --fen` CLI, deterministic tests, ruff and GitHub Actions. Confirm tensor count is 25,569 including biases. Do not begin Stockfish labeling until M0 gate is green.
+## Current status and next Codex task
+
+- M0 (#1): first runnable laboratory passed CI, implementation PR #10 was merged into the planning branch.
+- The foundation planning PR #9 must be merged into `main` before the following stacked PRs are retargeted.
+- M1 oracle (#2) lives in PR #11, based on the planning branch.
+- M1 dataset (#3) lives in PR #12, based on the oracle branch.
+- Do **not** present those PRs as merged to `main` until GitHub confirms this.
+
+**Next task after the M1 review gates pass:** implement M2 issue #4
+(auditable weight programming) in a fresh branch from the then-current `main`.
+Build `inspect_weights`, `apply_patch`, `probe`, checkpoint, and exact
+rollback, with validated sparse/low-rank/structured tensor edits. Every edit
+requires before/after hashes and tests demonstrating changed behavior.
+Keep agent edits separate from gradient-based baseline training; do not start
+Stockfish feedback experiments until patch audit and held-out access controls
+have passed review.
+
+If M1 is not yet merged, prioritize review feedback, fixes and CI evidence
+on PRs #9, #11 and #12 before beginning M2.
 
 ## PR handoff format
 Summary; linked issue; behavior demonstrated; tests and exact commands; artifacts/metrics; assumptions; known risks; next issue.
