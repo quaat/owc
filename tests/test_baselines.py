@@ -89,6 +89,8 @@ def test_train_checkpoint_and_compare(tmp_path: Path) -> None:
     assert manifest["optimization"].startswith("Adam/")
     assert manifest["parameters"] == 25_569
     assert manifest["training_positions_exposed"] > 0
+    assert manifest["training_label_presentations"] == 2 * manifest["training_positions_exposed"]
+    assert manifest["optimizer_updates"] > 0
     assert len(manifest["epochs"]) == 2
     assert math.isfinite(manifest["epochs"][-1]["dev_mae"])
     model, checked = load_checkpoint(out)

@@ -5,21 +5,31 @@ not held-out TEST labels, and reveals teacher targets only in charged feedback
 rounds. Actual isolation against an untrusted executable requires OS sandboxing.
 """
 
+import hashlib
 import json
 import math
+import os
+import platform
 import random
 import shlex
 import subprocess
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+from importlib.metadata import version
 from pathlib import Path
 from typing import Protocol
 
 import torch
 
-from owc.board.encoding import encode_board, parse_legal_fen
+from owc.board.encoding import ENCODING_VERSION, encode_board, parse_legal_fen
 from owc.dataset.positions import DATASET_VERSION
+from owc.experiments.request_wire import (
+    MAX_REQUEST_BYTES,
+    RequestSizeError,
+    bounded_request,
+    canonical_bytes,
+)
 from owc.oracle.stockfish import LABEL_VERSION, sha256_file
 from owc.weightspace.patches import PATCH_SCHEMA
 from owc.weightspace.session import WeightSession
@@ -39,8 +49,8 @@ class ExperimentSettings:
     def __post_init__(self) -> None:
         if self.feedback_rounds not in ALLOWED_FEEDBACK_ROUNDS:
             raise ValueError("feedback_rounds must be 0, 5, 20 or 50")
-        if self.probe_count < 1 or self.max_label_disclosures < 0:
-            raise ValueError("probe_count must be positive and label budget nonnegative")
+        if not 1 <= self.probe_count <= 32 or self.max_label_disclosures < 0:
+            raise ValueError("probe_count must be in [1,32] and label budget nonnegative")
         if not math.isfinite(self.max_seconds) or self.max_seconds <= 0:
             raise ValueError("max_seconds must be finite and positive")
 
@@ -80,7 +90,7 @@ class CommandAgent:
     the underlying model or implementation.
     """
 
-    def __init__(self, command: str, identity: str) -> None:
+    def __init__(self, command: str, identity: str, env: dict[str, str] | None = None) -> None:
         self.command = shlex.split(command)
         if not self.command:
             raise ValueError("agent command must not be empty")
@@ -88,14 +98,19 @@ class CommandAgent:
             raise ValueError("Actual agent identity must be declared")
 
         self.identity = identity
+        self.env = dict(env) if env is not None else None
 
     def propose(self, request: dict, timeout_seconds: float) -> dict:
+        wire = canonical_bytes(request)
+        if len(wire) > MAX_REQUEST_BYTES:
+            raise RequestSizeError(f"Agent request exceeds {MAX_REQUEST_BYTES} bytes")
         completed = subprocess.run(
             self.command,
-            input=json.dumps(request, sort_keys=True),
+            input=wire.decode("utf-8"),
             capture_output=True,
             text=True,
             timeout=timeout_seconds,
+            env=self.env,
             check=False,
         )
         if completed.returncode:
@@ -184,6 +199,35 @@ def _predict(session: WeightSession, positions: list[dict]) -> list[float]:
         return [float(value) for value in model(batch).tolist()]
 
 
+def _nonzero_state(session: WeightSession, limit: int = 512) -> dict:
+    """Give the agent a bounded view of previously programmed parameters."""
+    model, _ = session.current()
+    values = {}
+    total = 0
+    for name, tensor in model.named_parameters():
+        cells = torch.nonzero(tensor.detach(), as_tuple=False)
+        total += len(cells)
+        for cell in cells[:max(0, limit - sum(map(len, values.values())))]:
+            index = cell.tolist()
+            values.setdefault(name, []).append({
+                "index": index, "value": float(tensor[tuple(index)].item()),
+            })
+    return {"total_nonzero": total, "shown": values, "truncated": total > limit}
+
+
+AGENT_CONTEXT = {
+    "encoding_version": ENCODING_VERSION,
+    "input_dimensions": 781,
+    "feature_index": "64*plane+square; plane 0..5 white P,N,B,R,Q,K; "
+                     "6..11 black P,N,B,R,Q,K; a1=0,h8=63; 768 white_to_move; "
+                     "769..772 WK,WQ,BK,BQ castling; 773..780 legal EP file a..h",
+    "network": "781 -> Linear(32) -> ReLU -> Linear(16) -> ReLU -> Linear(1) -> tanh",
+    "tensor_index": "matrix [output_unit,input_unit], bias [output_unit]",
+    "perspective": "positive is better for side to move",
+    "initialization": "all zero; connect nonzero paths through all three Linear layers",
+}
+
+
 def _atomic_json(path: Path, payload: dict) -> None:
     # Only used inside exclusive, newly created run directory.
     path.write_text(json.dumps(payload, sort_keys=True, indent=2, allow_nan=False) + "\n")
@@ -192,6 +236,27 @@ def _atomic_json(path: Path, payload: dict) -> None:
 def _append_event(path: Path, event: dict) -> None:
     with path.open("a", encoding="utf-8") as file:
         file.write(json.dumps(event, sort_keys=True, allow_nan=False) + "\n")
+
+
+def _environment() -> dict:
+    root = Path(__file__).resolve().parents[3]
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=root, capture_output=True,
+        text=True, timeout=5, check=False,
+    )
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=root, capture_output=True,
+        text=True, timeout=5, check=False,
+    )
+    return {
+        "commit": commit.stdout.strip() if commit.returncode == 0 else None,
+        "working_tree_dirty": bool(status.stdout.strip()) if status.returncode == 0 else None,
+        "python": platform.python_version(), "platform": platform.platform(),
+        "logical_cpus": os.cpu_count(),
+        "dependencies": {name: version(name) for name in (
+            "torch", "numpy", "python-chess", "chess",
+        )},
+    }
 
 
 def run_experiment(
@@ -219,14 +284,17 @@ def run_experiment(
     session = WeightSession.create(target / "weights")
     rng = random.Random(settings.seed)
     disclosures = 0
+    history: list[dict] = []
     started = time.monotonic()
     meta = {
         "schema_version": RUN_SCHEMA,
         "settings": asdict(settings),
         "agent_identity_declared": agent.identity,
         "teacher": provenance,
+        "environment": _environment(),
         "feedback_definition": "disclosed precomputed dev teacher labels, repetitions count",
         "live_stockfish_queries": 0,
+        "agent_request_max_bytes": MAX_REQUEST_BYTES,
         "status": "running",
         "started_at_utc": datetime.now(UTC).isoformat(),
     }
@@ -249,8 +317,7 @@ def run_experiment(
                     }
                     for p, prediction in zip(probes, baseline, strict=True)
                 ]
-                disclosures += len(feedback)
-                if disclosures > settings.max_label_disclosures:
+                if disclosures + len(feedback) > settings.max_label_disclosures:
                     raise ValueError("Feedback disclosure budget exceeded")
             request = {
                 "protocol": RUN_SCHEMA,
@@ -259,6 +326,10 @@ def run_experiment(
                 "seed": settings.seed,
                 "model_hash": state["model_hash"],
                 "model_tensors": state["tensors"],
+                "nonzero_state": _nonzero_state(session),
+                "agent_context": AGENT_CONTEXT,
+                "previous_rounds": [dict(item) for item in history[-5:]],
+                "previous_rounds_omitted": max(0, len(history) - 5),
                 "blind_probes": [
                     {"fen": p["fen"], "prediction": prediction}
                     for p, prediction in zip(probes, baseline, strict=True)
@@ -267,25 +338,71 @@ def run_experiment(
                 "constraints": {
                     "no_gradient_optimizer": True,
                     "patch_schema": PATCH_SCHEMA,
-                    "label_disclosures_used": disclosures,
+                    "label_disclosures_used": disclosures + len(feedback),
                     "label_disclosures_budget": settings.max_label_disclosures,
                 },
             }
             remaining = settings.max_seconds - (time.monotonic() - started)
             if remaining <= 0:
                 raise TimeoutError("Total experiment wall-clock budget exceeded")
-            patch = agent.propose(request, remaining)
-            if not isinstance(patch, dict) or patch.get("actor") != agent.identity:
-                raise ValueError("Patch actor must match the declared agent identity")
-            outcome = session.apply(patch)
+            patch = None
+            wire = None
+            try:
+                request, wire = bounded_request(request)
+                disclosures += len(feedback)
+                patch = agent.propose(request, remaining)
+                if not isinstance(patch, dict) or patch.get("actor") != agent.identity:
+                    raise ValueError("Patch actor must match the declared agent identity")
+                outcome = session.apply(patch)
+            except Exception as error:
+                audit_request = request if not isinstance(error, RequestSizeError) else {
+                    "protocol": RUN_SCHEMA, "round": step,
+                    "model_hash": state["model_hash"],
+                    "request_size_error": str(error),
+                }
+                _append_event(log, {
+                    "round": step, "request": audit_request, "response_patch": patch,
+                    "status": "rejected", "error_type": type(error).__name__,
+                    "error": str(error)[:500],
+                    "request_sha256": hashlib.sha256(wire).hexdigest() if wire else None,
+                    "model_hash_after": session.inspect(max_values=0)["model_hash"],
+                    "elapsed_seconds": time.monotonic() - started,
+                })
+                raise
+            after_probes = _predict(session, probes)
+            dev_mae = sum(abs(p["target"] - value) for p, value in zip(
+                records, _predict(session, records), strict=True
+            )) / len(records)
             event = {
                 "round": step,
                 "request": request,
+                "request_bytes": len(wire),
+                "request_sha256": hashlib.sha256(wire).hexdigest(),
                 "response_patch": patch,
                 "outcome": outcome,
+                "post_patch_probes": [
+                    {"fen": p["fen"], "prediction": prediction}
+                    for p, prediction in zip(probes, after_probes, strict=True)
+                ],
+                "dev_mae_undisclosed": dev_mae,
                 "elapsed_seconds": time.monotonic() - started,
             }
             _append_event(log, event)
+            kinds: dict[str, int] = {}
+            for op in patch["ops"]:
+                kinds[op["kind"]] = kinds.get(op["kind"], 0) + 1
+            history.append({
+                "round": step,
+                "model_hash_before": outcome["before_hash"],
+                "model_hash_after": outcome["after_hash"],
+                "patch_sha256": hashlib.sha256(canonical_bytes(patch)).hexdigest(),
+                "patch_reason": patch["reason"],
+                "operation_kinds": kinds,
+                "operations": outcome["operations"],
+                "edited_cells": outcome["edited_cells"],
+                "changed_parameters": outcome["changed_parameters"],
+                "teacher_feedback_disclosed": feedback,
+            })
         predictions = _predict(session, records)
         mae = sum(
             abs(p["target"] - prediction)

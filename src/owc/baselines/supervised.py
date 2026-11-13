@@ -206,6 +206,7 @@ def train_supervised(
     x, y = _tensor_data(train)
     dev_samples = _tensor_data(dev)
     trajectory = []
+    optimizer_updates = 0
     for epoch in range(settings.epochs):
         model.train()
         generator = torch.Generator().manual_seed(settings.seed + epoch)
@@ -216,6 +217,7 @@ def train_supervised(
             loss = torch.nn.functional.mse_loss(prediction, y[batch])
             loss.backward()
             optimizer.step()
+            optimizer_updates += 1
         trajectory.append({
             "epoch": epoch + 1,
             "train_mae": _mae(model, (x, y)),
@@ -237,6 +239,8 @@ def train_supervised(
             "weights_sha256": sha256_file(weights),
             "settings": asdict(settings),
             "training_positions_exposed": len(train),
+            "training_label_presentations": len(train) * settings.epochs,
+            "optimizer_updates": optimizer_updates,
             "development_positions_evaluated_per_epoch": len(dev),
             "epochs": trajectory,
             "train": source_train,
