@@ -32,5 +32,11 @@ jobs:
       - name: Stockfish oracle smoke
         run: |
           STOCKFISH_PATH=/usr/games/stockfish python -m owc oracle score --fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" --nodes 256 --json
+      - name: Dataset generation smoke
+        run: |
+          ROOT="$(mktemp -d)"
+          python -m owc dataset build --synthetic-games 10 --seed 42 --min-ply 4 --stride 2 --max-plies 12 --dev-dir "$ROOT/dev" --heldout-dir "$ROOT/heldout"
+          test -f "$ROOT/dev/train.fen"
+          test -f "$ROOT/heldout/test.fen"
       - name: CLI smoke
         run: python -m owc inspect --json

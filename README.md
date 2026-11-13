@@ -64,6 +64,50 @@ data. Terminal positions are rejected because chess rules determine their result
 An identical node budget is not a bitwise reproducibility guarantee across
 Stockfish versions or hardware.
 
+## M1: Build a position dataset
+
+The first dataset pipeline groups positions by their **source game** before
+assigning train, development and test partitions using a stable hash. It
+deduplicates identical canonical board states (ignoring move counters) across
+all partitions. It cannot eliminate every *near-neighbor* or opening-family
+leak, so claims must be based on careful held-out testing.
+
+Use user-provided PGN material only when you have the rights to analyze it:
+
+```bash
+owc dataset build --pgn games.pgn --source-license "authorized" \
+  --dev-dir ./datasets/run-001 --heldout-dir /tmp/owc-sealed/run-001
+```
+
+For a deterministic **smoke test only**, synthetic random legal games can be
+generated without a PGN source:
+
+```bash
+owc dataset build --synthetic-games 100 --seed 42 \
+  --min-ply 8 --stride 4 --max-plies 80 \
+  --dev-dir ./datasets/smoke --heldout-dir /tmp/owc-sealed/smoke
+```
+
+Development output has `train.fen`, `dev.fen`, associated `*.meta.jsonl`
+records, and a manifest; held-out output has `test.fen` and its metadata.
+Both directories must be new and separated; held-out output **must be
+outside the working tree**. Access isolation is only real if the held-out
+folder is additionally owned/ACL-protected under a **different OS user or
+separate secure process** that the agent cannot read. The path check alone
+is not a security boundary.
+
+Feed development FEN files to the oracle:
+
+```bash
+owc oracle batch --input ./datasets/smoke/train.fen \
+  --output ./datasets/smoke/train.labels.jsonl --nodes 10000
+```
+
+Do not give an editing agent access to held-out files, labels or benchmark
+results. For scientifically useful experiments, replace random synthetic
+games with licensed, representative human/engine game data, including
+endgame and tactical position sources.
+
 ## Developer checks
 
 ```bash
