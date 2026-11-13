@@ -17,21 +17,24 @@ Develop a reproducible, CPU-first chess neural evaluator research harness that c
 9. Do not commit secrets, large datasets, binary engine executables, or unlicensed resources.
 10. Do not merge automatically or close milestone work before acceptance gates pass. Explicitly flag hardware/Stockfish dependencies unavailable to CI.
 
-## Current M2 status and next task
+## M3 development and next task
 
-- M0 implementation PR #10 and foundation PR #9 have been merged.
-- M1 oracle PR #11 was merged into its parent branch.
-- M1 dataset PR #12 was merged into its parent branch. Confirm that all M1
-  commits are propagated to `main` before opening independent branches.
-- M2 issue #4 implements **restricted JSON tensor patching**, immutable revisions,
-  named checkpoints, exact rollback and probing.
+M0 through M2 were merged into `main`; M3 has two independent workstreams:
+issue #5 for bounded agent-feedback protocol and #6 for supervised and
+handcrafted evaluation baselines. Keep their PRs reviewable and distinct.
 
-Review/merge the M2 PR only after CI passes and the previous branch stacking
-is resolved. **After M2 is merged**, proceed to M3 issue #5 (agent feedback
-experiments) and #6 (supervised baseline). Keep weight-programmed edits distinct
-from gradient descent. Never run hidden-test evaluations within the editing
-agent's accessible process, and always record the actual model identity rather
-than assuming Astra access.
+**Do not claim any real Astra/Codex experimental success** until an actual
+provider/model adapter is configured, run and authenticated. The built-in
+fixture is only for CI and has no chess intelligence. Precomputed teacher
+labels are not the same as live Stockfish queries; account for the
+upstream teacher-generation cost. External command adapters are not
+automatically sandboxed. Use true OS/process isolation from held-out
+test data; development-vs-test filenames are not an access-control boundary.
+
+After the agent runner and baseline land on main, run controlled experiments
+with representative licensed PGNs, an independent blind test service, three
+seeds, and published model and compute provenance. The next playable
+engine milestone is M4 issue #7.
 
 ## PR handoff format
 Summary; linked issue; behavior demonstrated; tests and exact commands; artifacts/metrics; assumptions; known risks; next issue.

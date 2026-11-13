@@ -177,6 +177,43 @@ manual operator inspection and removal before further edits.
 Use a separate process/OS account for held-out testing; filesystem path
 separation alone does **not** guarantee an editing agent cannot see test data.
 
+## M3: Bounded agent-driven direct weight experiments
+
+The experiment runner accepts only `dev.labels.jsonl` whose M1 corpus
+manifest, Stockfish label manifest and source-file hashes agree. It does not
+read the held-out test corpus or call Stockfish during the editing run.
+
+**Protocol:** E0 allows one **blind** initial patch without teacher targets.
+E5/E20/E50 permit one initial blind patch plus 5/20/50 feedback-guided
+patches respectively. Each disclosed teacher target is charged against the
+specified label budget, including repeated disclosures. All runs record
+the actor identity string, requests, patches, model hashes, development MAE,
+wall-clock usage, and the original Stockfish provenance.
+
+```bash
+# First build an M1 dataset and label its dev.fen as dev.labels.jsonl.
+owc experiment run --dev-labels datasets/smoke/dev.labels.jsonl \
+  --output-dir runs/trial-001 --feedback-rounds 0 --seeds 11 12 13
+
+# Operator-installed adapter (stdin JSON request -> stdout M2 JSON patch):
+owc experiment run --dev-labels datasets/smoke/dev.labels.jsonl \
+  --output-dir runs/trial-002 --feedback-rounds 5 \
+  --probe-count 4 --max-label-disclosures 20 \
+  --agent-id "provider:actual-model-id" \
+  --agent-command "python -m my_owc_agent_adapter"
+```
+
+**The default adapter is only a deterministic fixture**, not an LLM or chess
+learning system. A separate Codex/Astra adapter must be supplied and run by
+the operator; `--agent-id` is a self-declaration and not verified model
+identity. An external command runs with the operator's OS permissions and
+environment. It is **not sandboxed automatically**: isolate executable
+agents under different OS credentials/container access so held-out data
+cannot be read. Never give the editing agent paths or credentials to
+sealed test files. The protocol's `live_stockfish_queries=0` means
+*no new engine calls during these runs*, not that the dataset was free.
+The fixture's development MAE must not be interpreted as chess improvement.
+
 ## Developer checks
 
 ```bash
