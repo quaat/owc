@@ -1,0 +1,23 @@
+{
+  "adapter_source_sha256": "791006349e31e6e802e0da69223b5271c4624a03aa99c0ed33e0ea38194c3a15",
+  "commit": "5a5d08d591c681eb723516ebe9fa0d558c30eb50",
+  "dollar_cost_ceiling": null,
+  "dollar_cost_note": "Deployment price unavailable; one call and token caps bound exposure",
+  "endpoint_sha256": "60c429707d0589176d653598262683578e4e15a3e1c67d791687736290e32e1e",
+  "instructions_sha256": "edfa6e932dd69494368447f3f1cfed4b188457a1e40cd5a1e2c6a629a4802e24",
+  "launcher_source_sha256": "4952960ea114c76a1ffc138c0635dbe5af604154fd01a05b3699688bb88778ea",
+  "max_output_tokens": 3000,
+  "probe": {
+    "authenticated_models_http": 200,
+    "credential_present": true,
+    "datasets_hidden": true,
+    "deployment_listed": true,
+    "heldout_access_denied": true,
+    "home_hidden": true
+  },
+  "provider_timeout_seconds": 90,
+  "request_headroom_bytes": 4096,
+  "request_max_bytes": 256000,
+  "schema_version": "owc.isolated-e0-preparation.v1",
+  "working_tree_dirty": false
+}

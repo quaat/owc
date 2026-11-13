@@ -24,6 +24,8 @@ entry point for issue #17's first Foundry integration attempt. It links the
 [independent-review next steps](docs/research/NEXT_STEPS.md).
 The 2026-11-13 E0 patch call failed before inference; no Astra weight edit
 or held-out result is claimed.
+The later [isolated E0 preparation](reports/experiments/2026-11-13-e0-preparation/)
+records network and access checks only; its billable patch call has not run.
 
 ## Install (Python 3.12, CPU)
 
