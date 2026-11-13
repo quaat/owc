@@ -18,8 +18,8 @@ import numpy as np
 import torch
 from torch import nn
 
-from owc.board.encoding import ENCODING_VERSION, encode_board, parse_legal_fen
 from owc.baselines.heuristic import HEURISTIC_VERSION, heuristic_score
+from owc.board.encoding import ENCODING_VERSION, encode_board, parse_legal_fen
 from owc.dataset.positions import DATASET_VERSION
 from owc.models.raw_mlp import RawMLP
 from owc.oracle.stockfish import LABEL_VERSION, sha256_file
@@ -149,7 +149,8 @@ def evaluate_models(
 ) -> dict:
     """Development-only side-by-side MAE on one versioned teacher dataset."""
     items, provenance = read_split(labels, "dev")
-    mean = lambda values: sum(values) / len(values)
+    def mean(values: list[float]) -> float:
+        return sum(values) / len(values)
     metrics = {
         "schema_version": BASELINE_VERSION,
         "dataset": provenance,
